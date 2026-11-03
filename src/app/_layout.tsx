@@ -7,6 +7,7 @@ import { useColorScheme } from 'react-native';
 
 import { apolloClient } from '@/api/client';
 import { AuthProvider, useAuth } from '@/auth/auth-context';
+import { Brand, Colors } from '@/constants/theme';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -20,7 +21,13 @@ function RootStack() {
   if (!ready) return null;
 
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: Brand.black },
+        headerTintColor: Brand.yellow,
+        headerTitleStyle: { color: '#FFFFFF', fontWeight: '800' },
+        headerShadowVisible: false,
+      }}>
       {/* title: what the back button of the screens above the tabs shows */}
       <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'CarZip' }} />
       <Stack.Screen name="login" options={{ presentation: 'modal', title: 'Log in' }} />
@@ -29,11 +36,16 @@ function RootStack() {
 }
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const dark = useColorScheme() === 'dark';
+  const base = dark ? DarkTheme : DefaultTheme;
+  const colors = Colors[dark ? 'dark' : 'light'];
+  // navigation in the CarZip colours: yellow accent, the app's own background
+  const theme = { ...base, colors: { ...base.colors, primary: Brand.yellow, background: colors.background } };
+
   return (
     <ApolloProvider client={apolloClient}>
       <AuthProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <ThemeProvider value={theme}>
           <RootStack />
         </ThemeProvider>
       </AuthProvider>

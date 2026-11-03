@@ -1,31 +1,44 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * brand is the CarZip accent of the website (main buttons, links, selection).
+ * CarZip colours come from the logo: a yellow square with a black Z (CarZip-next/public/icon.svg).
+ * Yellow is the one accent (main buttons, prices, the selected tab); black carries text and hero blocks.
  */
 
 import '@/global.css';
 
 import { Platform } from 'react-native';
 
+export const Brand = {
+  yellow: '#F5A623',
+  yellowLight: '#FFC94D', // the bright edge of the button shine
+  ink: '#1E242B', // the Z of the logo
+  black: '#0E1116',
+} as const;
+
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-    brand: '#3182F6',
-    onBrand: '#ffffff',
+    text: '#14181D',
+    background: '#FFFBF2',
+    backgroundElement: '#FFFFFF',
+    backgroundSelected: '#FFF0D1',
+    textSecondary: '#5F6670',
+    border: '#EDE3D0',
+    brand: Brand.yellow,
+    onBrand: Brand.ink,
+    hero: Brand.ink,
+    onHero: '#FFFFFF',
     danger: '#D93025',
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-    brand: '#4C94F7',
-    onBrand: '#ffffff',
+    text: '#F6F5F2',
+    background: Brand.black,
+    backgroundElement: '#1A1F26',
+    backgroundSelected: '#2B2415',
+    textSecondary: '#A3AAB4',
+    border: '#2A3039',
+    brand: Brand.yellow,
+    onBrand: Brand.ink,
+    hero: '#1A1F26',
+    onHero: '#FFFFFF',
     danger: '#F28B82',
   },
 } as const;
@@ -65,6 +78,13 @@ export const Spacing = {
   four: 24,
   five: 32,
   six: 64,
+} as const;
+
+export const Radius = {
+  small: 10,
+  medium: 16,
+  large: 24,
+  pill: 999,
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;

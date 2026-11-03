@@ -1,12 +1,12 @@
 import { Tabs, TabList, TabTrigger, TabSlot, TabTriggerSlotProps, TabListProps } from 'expo-router/ui';
-import { Pressable, View, StyleSheet, type PressableProps } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { Brand, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 
-import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
+import { LogoMark } from './logo';
+import { PressableScale } from './pressable-scale';
 
-/** the browser build (for development): the same three tabs as a bar on top */
+/** the browser build (for development): the same three tabs as a black bar on top */
 export default function AppTabs() {
   return (
     <Tabs>
@@ -28,31 +28,26 @@ export default function AppTabs() {
   );
 }
 
-export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
+export function TabButton({ children, isFocused, onPress, onLongPress }: TabTriggerSlotProps) {
   return (
-    // TabTrigger hands over a View ref, Pressable's ref type is a little different: same element at runtime
-    <Pressable {...(props as PressableProps)} style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView
-        type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
-        style={styles.tabButtonView}>
-        <ThemedText type="small" themeColor={isFocused ? 'brand' : 'textSecondary'}>
-          {children}
-        </ThemedText>
-      </ThemedView>
-    </Pressable>
+    <PressableScale
+      onPress={onPress}
+      onLongPress={onLongPress}
+      style={[styles.tabButton, isFocused && styles.tabButtonFocused]}>
+      <Text style={[styles.tabLabel, isFocused && styles.tabLabelFocused]}>{children}</Text>
+    </PressableScale>
   );
 }
 
 export function CustomTabList(props: TabListProps) {
   return (
     <View {...props} style={styles.tabListContainer}>
-      <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" themeColor="brand" style={styles.brandText}>
-          CarZip
-        </ThemedText>
-
+      <View style={styles.innerContainer}>
+        <View style={styles.brand}>
+          <LogoMark size={26} />
+        </View>
         {props.children}
-      </ThemedView>
+      </View>
     </View>
   );
 }
@@ -65,26 +60,40 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
+    zIndex: 10,
   },
   innerContainer: {
     paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.five,
-    borderRadius: Spacing.five,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.pill,
+    backgroundColor: Brand.black,
     flexDirection: 'row',
     alignItems: 'center',
     flexGrow: 1,
     gap: Spacing.two,
     maxWidth: MaxContentWidth,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
   },
-  brandText: {
+  brand: {
     marginRight: 'auto',
   },
-  pressed: {
-    opacity: 0.7,
-  },
-  tabButtonView: {
-    paddingVertical: Spacing.one,
+  tabButton: {
+    paddingVertical: Spacing.one + 2,
     paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.three,
+    borderRadius: Radius.pill,
+  },
+  tabButtonFocused: {
+    backgroundColor: Brand.yellow,
+  },
+  tabLabel: {
+    color: '#A3AAB4',
+    fontSize: 14,
+    fontWeight: 700,
+  },
+  tabLabelFocused: {
+    color: Brand.ink,
   },
 });
