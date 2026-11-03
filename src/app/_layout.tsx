@@ -2,17 +2,23 @@ import { ApolloProvider } from '@apollo/client/react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import { Stack } from 'expo-router/stack';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
 
 import { apolloClient } from '@/api/client';
 import { AuthProvider, useAuth } from '@/auth/auth-context';
 import { Brand, Colors } from '@/constants/theme';
+import { loadThemeChoice, useColorScheme } from '@/hooks/use-color-scheme';
 
 SplashScreen.preventAutoHideAsync();
 
 function RootStack() {
   const { ready } = useAuth();
+
+  // the light / dark choice from last time is read while the splash screen is still up
+  useEffect(() => {
+    loadThemeChoice();
+  }, []);
 
   // the splash screen stays until the saved login is checked, so a member never sees the guest screens first
   useEffect(() => {
@@ -47,6 +53,7 @@ export default function RootLayout() {
     <ApolloProvider client={apolloClient}>
       <AuthProvider>
         <ThemeProvider value={theme}>
+          <StatusBar style={dark ? 'light' : 'dark'} />
           <RootStack />
         </ThemeProvider>
       </AuthProvider>

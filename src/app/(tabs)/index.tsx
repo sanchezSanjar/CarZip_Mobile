@@ -18,6 +18,7 @@ import { countFilters, FilterSheet, NO_FILTERS, type CarFilters } from '@/compon
 import { Logo, LogoMark } from '@/components/logo';
 import { PressableScale } from '@/components/pressable-scale';
 import { CarCardSkeleton } from '@/components/skeleton';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BRANDS, PRICE_RANGES, SORTS } from '@/constants/cars';
@@ -147,6 +148,7 @@ export default function CarsScreen() {
                 </Animated.View>
               )}
             </PressableScale>
+            <ThemeToggle />
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.brandRow}>
             <Chip label="All brands" selected={!brands.length} onPress={() => setBrands([])} />
