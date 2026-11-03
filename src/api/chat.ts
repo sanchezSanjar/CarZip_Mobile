@@ -4,9 +4,10 @@ import { useSyncExternalStore } from 'react';
 import { getAccessToken, onMemberChange, peekAccessToken, refreshAccessToken } from '@/auth/session';
 
 import { WS_URL } from './config';
+import type { PrivateMessageItem } from './queries';
 
 /**
- * The public CarZip chat room over plain WebSocket (backend API.md §16).
+ * The public CarZip chat room over plain WebSocket (backend API.md §16), and the live events of private messages (§17).
  * - connects with the access token (or as a guest, read only)
  * - after every token refresh it sends { event: "auth" } so the connection keeps going with the new token
  * - login / logout of another member: reconnects as them
@@ -37,6 +38,19 @@ const KEEP = 100; // messages kept on the phone
 const CLOSE_UNAUTHORIZED = 4001; // bad / expired token
 const CLOSE_FORBIDDEN = 4003; // blocked member
 export const MESSAGE_MAX_LENGTH = 500;
+
+/** private-message events from the server (backend API.md §17): only for this member's conversations */
+export type PrivateEvent =
+  | { event: 'privateMessage'; conversationId: string; message: PrivateMessageItem }
+  | { event: 'conversationRead'; conversationId: string; readAt: string };
+
+const privateListeners = new Set<(event: PrivateEvent) => void>();
+
+/** the conversation list, the open thread and the tab badge listen here; returns the unsubscribe function */
+export function onPrivateEvent(listener: (event: PrivateEvent) => void): () => void {
+  privateListeners.add(listener);
+  return () => privateListeners.delete(listener);
+}
 
 let state: ChatState = { status: 'closed', messages: [], online: 0, error: '' };
 const listeners = new Set<() => void>();
@@ -92,6 +106,9 @@ async function open() {
       update({ messages: [...state.messages, message].slice(-KEEP) });
     } else if (msg.event === 'info') update({ online: msg.totalClients ?? 0 });
     else if (msg.event === 'error') update({ error: msg.message ?? '' });
+    else if (msg.event === 'privateMessage' || msg.event === 'conversationRead') {
+      privateListeners.forEach((listener) => listener(msg as unknown as PrivateEvent));
+    }
   };
 
   ws.onclose = (event) => {

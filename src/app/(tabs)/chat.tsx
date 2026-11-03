@@ -1,167 +1,165 @@
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import { useQuery } from '@apollo/client/react';
+import { Image } from 'expo-image';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect } from 'react';
+import { FlatList, Platform, StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { MESSAGE_MAX_LENGTH, sendChat, startChat, useChat, type ChatMessage } from '@/api/chat';
+import { onPrivateEvent, startChat, useChat } from '@/api/chat';
+import { GET_CONVERSATIONS, type ConversationItem } from '@/api/queries';
 import { useAuth } from '@/auth/auth-context';
 import { Button } from '@/components/button';
 import { PressableScale } from '@/components/pressable-scale';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { enterUp } from '@/constants/motion';
+import { shortTime } from '@/constants/time';
 import { BottomTabInset, Brand, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-/** a yellow "live" dot with a ring that keeps growing out of it; grey while not connected */
-function LiveDot({ live }: { live: boolean }) {
-  const pulse = useSharedValue(0);
-  useEffect(() => {
-    pulse.set(withRepeat(withTiming(1, { duration: 1400, easing: Easing.out(Easing.quad) }), -1));
-  }, [pulse]);
-  const ringStyle = useAnimatedStyle(() => ({
-    opacity: 0.7 * (1 - pulse.get()),
-    transform: [{ scale: 1 + pulse.get() * 1.6 }],
-  }));
-  const color = live ? Brand.yellow : '#6B727C';
-
+/** the public room, on top of the list */
+function CommunityCard() {
+  const chat = useChat();
   return (
-    <View style={styles.dotBox}>
-      {live && <Animated.View style={[styles.dot, styles.ring, { borderColor: color }, ringStyle]} />}
-      <View style={[styles.dot, { backgroundColor: color }]} />
-    </View>
+    <PressableScale onPress={() => router.push('/community')} pressedScale={0.97} style={styles.community}>
+      <View style={styles.communityIcon}>
+        <Text style={styles.communityIconText}>#</Text>
+      </View>
+      <View style={styles.flex}>
+        <Text style={styles.communityTitle}>
+          CarZip <Text style={styles.accent}>community</Text>
+        </Text>
+        <Text style={styles.communityText}>
+          Public chat for everyone · {chat.status === 'open' ? `${chat.online} online` : 'connecting…'}
+        </Text>
+      </View>
+      <Text style={styles.chevron}>›</Text>
+    </PressableScale>
   );
 }
 
-const timeOf = (iso: string) => {
-  const date = new Date(iso);
-  return `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
-};
-
-function Bubble({ message, mine }: { message: ChatMessage; mine: boolean }) {
+function ConversationRow({ conversation, meId, index }: { conversation: ConversationItem; meId: string; index: number }) {
   const theme = useTheme();
-  const nick = message.memberData?.memberNick ?? 'Guest';
-  const dealer = message.memberData?.memberType === 'AGENT';
+  const partner = conversation.partner;
+  const name = partner?.agentCompany || partner?.memberNick || 'Member';
+  const unread = conversation.myUnread > 0;
+  const mineLast = conversation.lastSenderId === meId;
+
   return (
-    <Animated.View entering={enterUp()} style={[styles.bubbleRow, mine && styles.bubbleRowMine]}>
-      <View
-        style={[
-          styles.bubble,
-          mine
-            ? { backgroundColor: Brand.yellow, borderBottomRightRadius: 4 }
-            : { backgroundColor: theme.backgroundElement, borderColor: theme.border, borderWidth: 1, borderBottomLeftRadius: 4 },
-        ]}>
-        {!mine && (
-          <Text style={[styles.nick, { color: dealer ? Brand.yellow : theme.textSecondary }]}>
-            {nick}
-            {dealer ? ' · Dealer' : ''}
-          </Text>
+    <Animated.View entering={enterUp(Math.min(index, 4) * 40)}>
+      <PressableScale
+        pressedScale={0.98}
+        onPress={() => router.push({ pathname: '/conversation/[id]', params: { id: conversation._id } })}
+        style={[styles.row, { backgroundColor: theme.backgroundElement, borderColor: unread ? Brand.yellow : theme.border }]}>
+        {partner?.memberImage ? (
+          <Image source={partner.memberImage} style={styles.avatar} />
+        ) : (
+          <View style={[styles.avatar, styles.avatarEmpty]}>
+            <Text style={styles.avatarLetter}>{name.charAt(0).toUpperCase()}</Text>
+          </View>
         )}
-        <Text style={[styles.text, { color: mine ? Brand.ink : theme.text }]}>{message.text}</Text>
-        <Text style={[styles.time, { color: mine ? 'rgba(30,36,43,0.6)' : theme.textSecondary }]}>
-          {timeOf(message.createdAt)}
-        </Text>
-      </View>
+        <View style={styles.flex}>
+          <View style={styles.rowTop}>
+            <ThemedText type="smallBold" numberOfLines={1} style={styles.flex}>
+              {name}
+              {partner?.memberType === 'AGENT' ? ' · Dealer' : ''}
+            </ThemedText>
+            <ThemedText type="small" themeColor={unread ? 'text' : 'textSecondary'}>
+              {shortTime(conversation.lastMessageAt)}
+            </ThemedText>
+          </View>
+          {conversation.carData && (
+            <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+              🚗 {conversation.carData.carTitle}
+            </ThemedText>
+          )}
+          <View style={styles.rowTop}>
+            <ThemedText type={unread ? 'smallBold' : 'small'} themeColor={unread ? 'text' : 'textSecondary'} numberOfLines={1} style={styles.flex}>
+              {conversation.lastMessageText ? `${mineLast ? 'You: ' : ''}${conversation.lastMessageText}` : 'Say hello 👋'}
+            </ThemedText>
+            {unread && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{conversation.myUnread > 99 ? '99+' : conversation.myUnread}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </PressableScale>
     </Animated.View>
   );
 }
 
-/** the public CarZip chat room: everyone reads, members write */
-export default function ChatScreen() {
-  const theme = useTheme();
+/** Chat tab: the community room and my private conversations with dealers / buyers */
+export default function ChatListScreen() {
   const { member } = useAuth();
-  const chat = useChat();
-  const [text, setText] = useState('');
+  const { data, loading, refetch } = useQuery<{ getConversations: { list: ConversationItem[]; total: number } }>(
+    GET_CONVERSATIONS,
+    { variables: { input: { page: 1, limit: 50 } }, skip: !member, fetchPolicy: 'cache-and-network' },
+  );
 
   useEffect(() => {
     startChat();
   }, []);
+  // a new message or a read receipt somewhere: the list (order, last message, unread) is loaded again
+  useEffect(() => {
+    if (!member) return;
+    return onPrivateEvent(() => {
+      refetch().catch(() => undefined);
+    });
+  }, [member, refetch]);
+  useFocusEffect(
+    useCallback(() => {
+      if (member) refetch().catch(() => undefined);
+    }, [member, refetch]),
+  );
 
-  const send = () => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    if (sendChat(trimmed)) setText('');
-  };
-
-  const live = chat.status === 'open';
-  const statusText =
-    chat.status === 'open'
-      ? `${chat.online} online`
-      : chat.status === 'blocked'
-        ? 'Your account is blocked'
-        : 'Connecting…';
+  const conversations = data?.getConversations.list ?? [];
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <Animated.View entering={enterUp()} style={styles.header}>
-          <View style={styles.liveRow}>
-            <LiveDot live={live} />
-            <Text style={styles.liveText}>{live ? 'LIVE' : 'OFFLINE'}</Text>
-            <Text style={styles.online}>{statusText}</Text>
-          </View>
-          <Text style={styles.title}>
-            CarZip <Text style={styles.accent}>chat</Text>
-          </Text>
-        </Animated.View>
-
-        <KeyboardAvoidingView
-          style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? BottomTabInset : 0}>
-          <FlatList
-            // newest at the bottom, like every chat: the list is drawn upside down
-            inverted
-            data={[...chat.messages].reverse()}
-            keyExtractor={(message, index) => `${message.createdAt}-${index}`}
-            renderItem={({ item }) => <Bubble message={item} mine={!!member && item.memberData?._id === member._id} />}
-            contentContainerStyle={styles.list}
-            ListEmptyComponent={
-              <View style={styles.empty}>
-                <ThemedText themeColor="textSecondary">No messages in the last 7 days. Say hello!</ThemedText>
-              </View>
-            }
-          />
-
-          {!!chat.error && (
-            <ThemedText type="smallBold" themeColor="danger" style={styles.error}>
-              {chat.error}
-            </ThemedText>
-          )}
-
-          <View style={[styles.inputBar, { backgroundColor: theme.background, borderColor: theme.border }]}>
-            {member ? (
-              <>
-                <TextInput
-                  value={text}
-                  onChangeText={setText}
-                  placeholder={live ? 'Write a message…' : 'Connecting…'}
-                  placeholderTextColor={theme.textSecondary}
-                  maxLength={MESSAGE_MAX_LENGTH}
-                  multiline
-                  editable={chat.status !== 'blocked'}
-                  style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement, borderColor: theme.border }]}
-                />
-                <PressableScale
-                  onPress={send}
-                  disabled={!live || !text.trim()}
-                  accessibilityLabel="Send"
-                  style={[styles.send, (!live || !text.trim()) && styles.sendOff]}>
-                  <Text style={styles.sendIcon}>➤</Text>
-                </PressableScale>
-              </>
+        <FlatList
+          data={member ? conversations : []}
+          keyExtractor={(conversation) => conversation._id}
+          renderItem={({ item, index }) => <ConversationRow conversation={item} meId={member!._id} index={index} />}
+          contentContainerStyle={styles.list}
+          refreshing={loading && !!data}
+          onRefresh={member ? () => refetch() : undefined}
+          ListHeaderComponent={
+            <View style={styles.header}>
+              <ThemedText type="subtitle">Messages</ThemedText>
+              <CommunityCard />
+              {member && conversations.length > 0 && (
+                <ThemedText type="smallBold" themeColor="textSecondary" style={styles.label}>
+                  CONVERSATIONS
+                </ThemedText>
+              )}
+            </View>
+          }
+          ListEmptyComponent={
+            member ? (
+              loading ? undefined : (
+                <View style={styles.empty}>
+                  <ThemedText themeColor="textSecondary" style={styles.center}>
+                    No conversations yet. Open a car and tap “Message dealer” to ask about it.
+                  </ThemedText>
+                </View>
+              )
             ) : (
-              <Button title="Log in to write" style={styles.flex} onPress={() => router.push('/login')} />
-            )}
-          </View>
-        </KeyboardAvoidingView>
+              <View style={styles.empty}>
+                <ThemedText themeColor="textSecondary" style={styles.center}>
+                  Log in to message dealers about their cars.
+                </ThemedText>
+                <Button title="Log in" onPress={() => router.push('/login')} />
+              </View>
+            )
+          }
+        />
       </SafeAreaView>
     </ThemedView>
   );
 }
-
-const DOT = 10;
 
 const styles = StyleSheet.create({
   container: {
@@ -172,117 +170,32 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     maxWidth: MaxContentWidth,
-    paddingTop: Platform.OS === 'web' ? Spacing.six + Spacing.four : 0,
   },
   flex: {
     flex: 1,
   },
-  header: {
-    backgroundColor: Brand.ink,
-    borderRadius: Radius.large,
-    marginHorizontal: Spacing.three,
-    marginTop: Spacing.two,
-    padding: Spacing.three,
-    gap: Spacing.one,
-  },
-  liveRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-  },
-  liveText: {
-    color: Brand.yellow,
-    fontSize: 12,
-    fontWeight: 900,
-    letterSpacing: 2,
-  },
-  online: {
-    color: '#C9CED6',
-    fontSize: 13,
-    marginLeft: 'auto',
-  },
-  title: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    fontWeight: 900,
-    letterSpacing: -0.5,
-  },
-  accent: {
-    color: Brand.yellow,
-  },
-  dotBox: {
-    width: DOT,
-    height: DOT,
-  },
-  dot: {
-    position: 'absolute',
-    width: DOT,
-    height: DOT,
-    borderRadius: DOT / 2,
-  },
-  ring: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-  },
   list: {
     padding: Spacing.three,
     gap: Spacing.two,
+    paddingTop: Platform.OS === 'web' ? Spacing.six + Spacing.four : Spacing.three,
+    paddingBottom: BottomTabInset + Spacing.three,
   },
-  empty: {
+  header: {
+    gap: Spacing.three,
+    marginBottom: Spacing.one,
+  },
+  label: {
+    letterSpacing: 1,
+  },
+  community: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: Spacing.five,
-    // the list is upside down
-    transform: [{ scaleY: -1 }],
-  },
-  bubbleRow: {
-    flexDirection: 'row',
-  },
-  bubbleRowMine: {
-    justifyContent: 'flex-end',
-  },
-  bubble: {
-    maxWidth: '80%',
-    borderRadius: Radius.medium,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    gap: 2,
-  },
-  nick: {
-    fontSize: 12,
-    fontWeight: 800,
-  },
-  text: {
-    fontSize: 15,
-    lineHeight: 21,
-  },
-  time: {
-    fontSize: 11,
-    alignSelf: 'flex-end',
-  },
-  error: {
-    paddingHorizontal: Spacing.three,
-    paddingBottom: Spacing.one,
-  },
-  inputBar: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: Spacing.two,
-    padding: Spacing.three,
-    paddingBottom: Platform.OS === 'web' ? Spacing.three : BottomTabInset + Spacing.two,
-    borderTopWidth: 1,
-  },
-  input: {
-    flex: 1,
-    minHeight: 46,
-    maxHeight: 120,
-    borderWidth: 1.5,
+    gap: Spacing.three,
+    backgroundColor: Brand.ink,
     borderRadius: Radius.large,
-    paddingHorizontal: Spacing.three,
-    paddingTop: 12,
-    paddingBottom: 12,
-    fontSize: 15,
+    padding: Spacing.three,
   },
-  send: {
+  communityIcon: {
     width: 46,
     height: 46,
     borderRadius: 23,
@@ -290,12 +203,76 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sendOff: {
-    opacity: 0.45,
-  },
-  sendIcon: {
+  communityIconText: {
     color: Brand.ink,
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 900,
+  },
+  communityTitle: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: 900,
+  },
+  communityText: {
+    color: '#C9CED6',
+    fontSize: 13,
+  },
+  accent: {
+    color: Brand.yellow,
+  },
+  chevron: {
+    color: Brand.yellow,
+    fontSize: 28,
+    fontWeight: 700,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    padding: Spacing.three,
+    borderRadius: Radius.large,
+    borderWidth: 1.5,
+  },
+  rowTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+  },
+  avatarEmpty: {
+    backgroundColor: Brand.yellow,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarLetter: {
+    color: Brand.ink,
+    fontSize: 22,
+    fontWeight: 900,
+  },
+  badge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    paddingHorizontal: 6,
+    backgroundColor: Brand.yellow,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: Brand.ink,
+    fontSize: 12,
+    fontWeight: 900,
+  },
+  empty: {
+    alignItems: 'center',
+    gap: Spacing.three,
+    paddingVertical: Spacing.five,
+  },
+  center: {
+    textAlign: 'center',
   },
 });

@@ -1,4 +1,4 @@
-import { useQuery } from '@apollo/client/react';
+import { useMutation, useQuery } from '@apollo/client/react';
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -11,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { GET_CAR, type GetCarData } from '@/api/queries';
+import { GET_CAR, START_CONVERSATION, type GetCarData } from '@/api/queries';
 import { useAuth } from '@/auth/auth-context';
 import { Button } from '@/components/button';
 import { LikeButton } from '@/components/like-button';
@@ -104,6 +104,23 @@ export default function CarScreen() {
   }));
 
   const bookTestDrive = () => (member ? setBookingOpen(true) : router.push('/login'));
+  const [startConversation, { loading: opening }] = useMutation<{ startConversation: { _id: string } }>(START_CONVERSATION);
+  const [chatError, setChatError] = useState('');
+  // opens the conversation with the dealer (or creates it), about this car
+  const messageDealer = async () => {
+    if (!member) return router.push('/login');
+    if (!car?.agentData) return;
+    setChatError('');
+    try {
+      const result = await startConversation({ variables: { input: { targetId: car.agentData._id, carId: car._id } } });
+      const conversationId = result.data?.startConversation._id;
+      if (conversationId) router.push({ pathname: '/conversation/[id]', params: { id: conversationId } });
+    } catch (err) {
+      setChatError(err instanceof Error ? err.message : 'Could not open the conversation.');
+    }
+  };
+  // buyers and guests write to the dealer; dealers and admins don't (messages are buyer <-> dealer)
+  const canMessage = !member || member.memberType === 'USER';
   const agent = car?.agentData;
   const liked = !!car?.meLiked?.[0]?.myFavorite;
 
@@ -202,12 +219,14 @@ export default function CarScreen() {
                       <Text style={styles.dealerSub}>Verified dealer · {car.carAddress}</Text>
                     </View>
                   </View>
+                  {canMessage && <Button title="Message dealer" busy={opening} onPress={messageDealer} />}
+                  {!!chatError && <Text style={styles.chatError}>{chatError}</Text>}
                   <View style={styles.dealerActions}>
                     {!!agent.contactPhone && (
-                      <Button title="Call" style={styles.flex} onPress={() => Linking.openURL(`tel:${agent.contactPhone}`)} />
+                      <Button title="Call" variant="onDark" style={styles.flex} onPress={() => Linking.openURL(`tel:${agent.contactPhone}`)} />
                     )}
                     {!!agent.contactKakao && (
-                      <Button title={`Kakao: ${agent.contactKakao}`} variant="outline" style={[styles.flex, styles.onDark]} />
+                      <Button title={`Kakao: ${agent.contactKakao}`} variant="onDark" style={styles.flex} />
                     )}
                   </View>
                 </Animated.View>
@@ -382,15 +401,17 @@ const styles = StyleSheet.create({
     color: '#C9CED6',
     fontSize: 13,
   },
+  chatError: {
+    color: '#F28B82',
+    fontSize: 13,
+    fontWeight: 700,
+  },
   dealerActions: {
     flexDirection: 'row',
     gap: Spacing.two,
   },
   flex: {
     flex: 1,
-  },
-  onDark: {
-    borderColor: '#3A414B',
   },
   dots: {
     position: 'absolute',

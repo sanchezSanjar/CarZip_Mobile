@@ -5,6 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
+import { startChat } from '@/api/chat';
 import { apolloClient } from '@/api/client';
 import { AuthProvider, useAuth } from '@/auth/auth-context';
 import { Brand, Colors } from '@/constants/theme';
@@ -22,7 +23,9 @@ function RootStack() {
 
   // the splash screen stays until the saved login is checked, so a member never sees the guest screens first
   useEffect(() => {
-    if (ready) SplashScreen.hideAsync();
+    if (!ready) return;
+    SplashScreen.hideAsync();
+    startChat(); // the live connection: community room, new private messages and read receipts
   }, [ready]);
   if (!ready) return null;
 
@@ -38,6 +41,8 @@ function RootStack() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'CarZip' }} />
       <Stack.Screen name="login" options={{ presentation: 'modal', title: 'Log in' }} />
       <Stack.Screen name="car/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
+      <Stack.Screen name="community" options={{ title: 'Community', animation: 'slide_from_right' }} />
+      <Stack.Screen name="conversation/[id]" options={{ title: '', animation: 'slide_from_right' }} />
     </Stack>
   );
 }

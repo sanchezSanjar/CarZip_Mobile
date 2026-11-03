@@ -19,8 +19,8 @@ import { PressableScale, type PressableScaleProps } from './pressable-scale';
 
 export type ButtonProps = Omit<PressableScaleProps, 'children'> & {
   title: string;
-  /** primary: yellow, the main action. dark: black with yellow text. outline: a thin frame */
-  variant?: 'primary' | 'dark' | 'outline';
+  /** primary: yellow, the main action. dark: black with yellow text. outline: a thin frame. onDark: a frame on black blocks */
+  variant?: 'primary' | 'dark' | 'outline' | 'onDark';
   busy?: boolean;
 };
 
@@ -54,6 +54,7 @@ export function Button({ title, variant = 'primary', busy, disabled, onPress, st
     primary: { background: Brand.yellow, text: Brand.ink, border: Brand.yellow },
     dark: { background: Brand.ink, text: Brand.yellow, border: Brand.ink },
     outline: { background: 'transparent', text: theme.text, border: theme.border },
+    onDark: { background: 'transparent', text: '#FFFFFF', border: '#3A414B' },
   }[variant];
 
   return (

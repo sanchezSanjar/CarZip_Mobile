@@ -2,12 +2,14 @@ import { Tabs, TabList, TabTrigger, TabSlot, TabTriggerSlotProps, TabListProps }
 import { View, StyleSheet, Text } from 'react-native';
 
 import { Brand, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { useUnreadMessages } from '@/hooks/use-unread-messages';
 
 import { LogoMark } from './logo';
 import { PressableScale } from './pressable-scale';
 
 /** the browser build (for development): the same three tabs as a black bar on top */
 export default function AppTabs() {
+  const unread = useUnreadMessages();
   return (
     <Tabs>
       <TabSlot style={{ height: '100%' }} />
@@ -17,7 +19,7 @@ export default function AppTabs() {
             <TabButton>Cars</TabButton>
           </TabTrigger>
           <TabTrigger name="chat" href="/chat" asChild>
-            <TabButton>Chat</TabButton>
+            <TabButton>{unread ? `Chat · ${unread}` : 'Chat'}</TabButton>
           </TabTrigger>
           <TabTrigger name="me" href="/me" asChild>
             <TabButton>Me</TabButton>
