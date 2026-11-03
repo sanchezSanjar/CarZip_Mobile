@@ -26,5 +26,20 @@ const retryLink = new ErrorLink(({ error, operation, forward }) => {
 
 export const apolloClient = new ApolloClient({
   link: ApolloLink.from([retryLink, authLink, new HttpLink({ uri: GRAPHQL_URL })]),
-  cache: new InMemoryCache(),
+  cache: new InMemoryCache({
+    typePolicies: {
+      Query: {
+        fields: {
+          getCars: {
+            // one list per search; the next pages (input.cursor) are added to its end
+            keyArgs: ['input', ['limit', 'sort', 'direction', 'search']],
+            merge(existing, incoming, { args }) {
+              if (!existing || !args?.input?.cursor) return incoming;
+              return { ...incoming, list: [...existing.list, ...incoming.list] };
+            },
+          },
+        },
+      },
+    },
+  }),
 });

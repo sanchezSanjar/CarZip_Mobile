@@ -31,6 +31,7 @@ function RootStack() {
       {/* title: what the back button of the screens above the tabs shows */}
       <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'CarZip' }} />
       <Stack.Screen name="login" options={{ presentation: 'modal', title: 'Log in' }} />
+      <Stack.Screen name="car/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
     </Stack>
   );
 }
