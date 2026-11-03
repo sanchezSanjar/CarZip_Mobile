@@ -1,10 +1,11 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 
 import type { CarListItem } from '@/api/queries';
 import { enumLabel, formatPrice, isNew } from '@/constants/cars';
+import { enterUp } from '@/constants/motion';
 import { Brand, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -18,7 +19,7 @@ export function CarCard({ car, index }: { car: CarListItem; index: number }) {
 
   return (
     // the first cards come in one after another
-    <Animated.View entering={FadeInDown.delay(Math.min(index, 6) * 70).springify().damping(16)}>
+    <Animated.View entering={enterUp(Math.min(index, 4) * 40)}>
       <PressableScale
         pressedScale={0.97}
         onPress={() => router.push({ pathname: '/car/[id]', params: { id: car._id } })}

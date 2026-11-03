@@ -4,7 +4,6 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
-  FadeInDown,
   interpolate,
   useAnimatedScrollHandler,
   useAnimatedStyle,
@@ -22,6 +21,7 @@ import { TestDriveSheet } from '@/components/test-drive-sheet';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { enumLabel, formatPrice, isNew } from '@/constants/cars';
+import { enterUp } from '@/constants/motion';
 import { Brand, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -130,7 +130,7 @@ export default function CarScreen() {
           <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} contentContainerStyle={styles.scroll}>
             <Gallery images={car.carImages} scrollY={scrollY} />
             <View style={[styles.sheet, { backgroundColor: theme.background }]}>
-              <Animated.View entering={FadeInDown.springify().damping(16)} style={styles.body}>
+              <Animated.View entering={enterUp()} style={styles.body}>
                 <View style={styles.priceRow}>
                   <View style={styles.priceBadge}>
                     <Text style={styles.priceText}>{formatPrice(car)}</Text>
@@ -152,7 +152,7 @@ export default function CarScreen() {
                 </ThemedText>
               </Animated.View>
 
-              <Animated.View entering={FadeInDown.delay(80).springify().damping(16)} style={styles.facts}>
+              <Animated.View entering={enterUp(80)} style={styles.facts}>
                 <Fact label="Year" value={String(car.carYear)} />
                 <Fact label="Mileage" value={`${car.carMileage.toLocaleString('en-US')} km`} />
                 <Fact label="Fuel" value={enumLabel(car.carFuelType)} />
@@ -164,7 +164,7 @@ export default function CarScreen() {
               </Animated.View>
 
               {car.carOptions.length > 0 && (
-                <Animated.View entering={FadeInDown.delay(140).springify().damping(16)} style={styles.block}>
+                <Animated.View entering={enterUp(140)} style={styles.block}>
                   <ThemedText type="smallBold" themeColor="textSecondary" style={styles.label}>
                     OPTIONS
                   </ThemedText>
@@ -179,7 +179,7 @@ export default function CarScreen() {
               )}
 
               {!!car.carDesc && (
-                <Animated.View entering={FadeInDown.delay(180).springify().damping(16)} style={styles.block}>
+                <Animated.View entering={enterUp(180)} style={styles.block}>
                   <ThemedText type="smallBold" themeColor="textSecondary" style={styles.label}>
                     ABOUT THIS CAR
                   </ThemedText>
@@ -188,7 +188,7 @@ export default function CarScreen() {
               )}
 
               {agent && (
-                <Animated.View entering={FadeInDown.delay(220).springify().damping(16)} style={styles.dealer}>
+                <Animated.View entering={enterUp(220)} style={styles.dealer}>
                   <View style={styles.dealerRow}>
                     {agent.memberImage ? (
                       <Image source={agent.memberImage} style={styles.dealerPhoto} />

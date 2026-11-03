@@ -2,10 +2,11 @@ import { useMutation } from '@apollo/client/react';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { ZoomIn } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { REQUEST_TEST_DRIVE } from '@/api/queries';
+import { enterFade } from '@/constants/motion';
 import { Brand, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -65,7 +66,7 @@ export function TestDriveSheet({ carId, visible, onClose }: { carId: string; vis
         <View style={[styles.handle, { backgroundColor: theme.border }]} />
         {sent ? (
           <View style={styles.done}>
-            <Animated.View entering={ZoomIn.springify().damping(8)} style={styles.doneCircle}>
+            <Animated.View entering={enterFade()} style={styles.doneCircle}>
               <Text style={styles.doneCheck}>✓</Text>
             </Animated.View>
             <ThemedText type="subtitle">Request sent</ThemedText>

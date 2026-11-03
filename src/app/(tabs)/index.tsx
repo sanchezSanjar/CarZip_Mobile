@@ -2,14 +2,13 @@ import { useQuery } from '@apollo/client/react';
 import { useEffect, useState } from 'react';
 import { Platform, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, {
-  FadeInDown,
   interpolate,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
-  ZoomIn,
-} from 'react-native-reanimated';
+  } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { enterUp, enterFade } from '@/constants/motion';
 
 import { GET_CARS, type GetCarsData } from '@/api/queries';
 import { Button } from '@/components/button';
@@ -55,8 +54,8 @@ function useDebounced<T>(value: T, delay = 400): T {
 /** the black block on top of the list: logo and what CarZip is */
 function Hero() {
   return (
-    <Animated.View entering={FadeInDown.springify().damping(16)} style={styles.hero}>
-      <Animated.View entering={ZoomIn.delay(150).springify().damping(10)}>
+    <Animated.View entering={enterUp()} style={styles.hero}>
+      <Animated.View entering={enterFade(150)}>
         <Logo size={34} color="#FFFFFF" />
       </Animated.View>
       <Text style={styles.heroTitle}>
@@ -143,7 +142,7 @@ export default function CarsScreen() {
               style={[styles.filterButton, filterCount > 0 && styles.filterButtonOn]}>
               <Text style={[styles.filterIcon, { color: filterCount > 0 ? Brand.ink : Brand.yellow }]}>☰</Text>
               {filterCount > 0 && (
-                <Animated.View entering={ZoomIn.springify()} style={styles.filterCount}>
+                <Animated.View entering={enterFade()} style={styles.filterCount}>
                   <Text style={styles.filterCountText}>{filterCount}</Text>
                 </Animated.View>
               )}

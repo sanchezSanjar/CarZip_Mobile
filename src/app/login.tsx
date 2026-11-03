@@ -2,13 +2,12 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import Animated, {
-  FadeInDown,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
   withTiming,
-  ZoomIn,
-} from 'react-native-reanimated';
+  } from 'react-native-reanimated';
+import { enterUp, enterFade } from '@/constants/motion';
 
 import { ApiError } from '@/api/graphql';
 import { useAuth } from '@/auth/auth-context';
@@ -60,16 +59,16 @@ export default function LoginScreen() {
   return (
     <ThemedView style={styles.container}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.form}>
-        <Animated.View entering={ZoomIn.springify().damping(9)} style={styles.logo}>
+        <Animated.View entering={enterFade()} style={styles.logo}>
           <LogoMark size={76} />
         </Animated.View>
-        <Animated.View entering={FadeInDown.delay(120).springify().damping(16)} style={styles.heading}>
+        <Animated.View entering={enterUp(120)} style={styles.heading}>
           <ThemedText type="subtitle">Welcome back</ThemedText>
           <ThemedText themeColor="textSecondary">Log in with your nickname or phone number.</ThemedText>
         </Animated.View>
 
         {/* the entrance and the shake both move the view: each needs its own, or one overwrites the other */}
-        <Animated.View entering={FadeInDown.delay(220).springify().damping(16)}>
+        <Animated.View entering={enterUp(220)}>
           <Animated.View style={[styles.fields, shakeStyle]}>
             <TextField
               placeholder="Nickname or phone"
@@ -97,7 +96,7 @@ export default function LoginScreen() {
           </Animated.View>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(320).springify().damping(16)}>
+        <Animated.View entering={enterUp(320)}>
           <Button title="Log in" busy={busy} onPress={submit} />
         </Animated.View>
       </KeyboardAvoidingView>

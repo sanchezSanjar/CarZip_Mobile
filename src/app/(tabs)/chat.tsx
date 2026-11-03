@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
-  FadeInDown,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -11,6 +10,7 @@ import Animated, {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedView } from '@/components/themed-view';
+import { enterUp } from '@/constants/motion';
 import { Brand, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 
 /** a yellow "live" dot with a ring that keeps growing out of it */
@@ -37,7 +37,7 @@ export default function ChatScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <Animated.View entering={FadeInDown.springify().damping(16)} style={styles.hero}>
+        <Animated.View entering={enterUp()} style={styles.hero}>
           <View style={styles.liveRow}>
             <LiveDot />
             <Text style={styles.liveText}>LIVE</Text>

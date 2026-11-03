@@ -2,7 +2,7 @@ import { useQuery } from '@apollo/client/react';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { GET_MY_PROFILE, type GetMyProfileData } from '@/api/queries';
@@ -11,6 +11,7 @@ import { Button } from '@/components/button';
 import { LogoMark } from '@/components/logo';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { enterUp, enterFade } from '@/constants/motion';
 import { Brand, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -58,8 +59,8 @@ export default function MeScreen() {
       <SafeAreaView style={styles.safeArea}>
         {!member ? (
           <View style={styles.section}>
-            <Animated.View entering={FadeInDown.springify().damping(16)} style={styles.hero}>
-              <Animated.View entering={ZoomIn.delay(120).springify().damping(9)}>
+            <Animated.View entering={enterUp()} style={styles.hero}>
+              <Animated.View entering={enterFade(120)}>
                 <LogoMark size={64} />
               </Animated.View>
               <Text style={styles.heroTitle}>
@@ -69,14 +70,14 @@ export default function MeScreen() {
                 Log in to like cars, follow dealers, book test drives and write in the chat.
               </Text>
             </Animated.View>
-            <Animated.View entering={FadeInDown.delay(150).springify().damping(16)}>
+            <Animated.View entering={enterUp(150)}>
               <Button title="Log in" onPress={() => router.push('/login')} />
             </Animated.View>
           </View>
         ) : (
           <View style={styles.section}>
-            <Animated.View entering={FadeInDown.springify().damping(16)} style={styles.hero}>
-              <Animated.View entering={ZoomIn.delay(100).springify().damping(9)} style={styles.avatar}>
+            <Animated.View entering={enterUp()} style={styles.hero}>
+              <Animated.View entering={enterFade(100)} style={styles.avatar}>
                 <Text style={styles.avatarLetter}>{member.memberNick.charAt(0).toUpperCase()}</Text>
               </Animated.View>
               <Text style={styles.heroTitle}>{member.memberNick}</Text>
@@ -90,14 +91,14 @@ export default function MeScreen() {
 
             {(profile?.memberFullName || profile?.memberPhone) && (
               <Animated.View
-                entering={FadeInDown.delay(120).springify().damping(16)}
+                entering={enterUp(120)}
                 style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
                 <InfoRow label="Name" value={profile.memberFullName} />
                 <InfoRow label="Phone" value={profile.memberPhone} />
               </Animated.View>
             )}
 
-            <Animated.View entering={FadeInDown.delay(200).springify().damping(16)} style={styles.actions}>
+            <Animated.View entering={enterUp(200)} style={styles.actions}>
               <Button title="Log out" variant="dark" onPress={() => logOut()} />
               <Button title="Log out on every device" variant="outline" busy={busy} onPress={endEverywhere} />
               {!!error && (

@@ -2,7 +2,7 @@ import { useMutation } from '@apollo/client/react';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { Platform, StyleSheet, Text } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 
 import { LIKE_CAR } from '@/api/queries';
 import { useAuth } from '@/auth/auth-context';
@@ -20,7 +20,7 @@ export function LikeButton({ carId, liked, size = 40 }: { carId: string; liked: 
   const toggle = () => {
     if (!member) return router.push('/login');
     if (!liked) {
-      pop.set(withSequence(withSpring(1.45, { damping: 6, stiffness: 400 }), withSpring(1, { damping: 8 })));
+      pop.set(withSequence(withTiming(1.2, { duration: 120 }), withTiming(1, { duration: 160 })));
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
     likeCar({ variables: { carId } }).catch(() => undefined); // the cache updates the heart and the count
