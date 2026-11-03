@@ -15,13 +15,23 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+const RESTORE_TIMEOUT = 6000; // ms
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [member, setMember] = useState(session.currentMember);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const unsubscribe = session.onMemberChange(setMember);
-    session.restoreSession().finally(() => setReady(true));
+    // the app must open even when the check hangs (secure storage or network): then it starts as a guest
+    const timeout = new Promise<void>((resolve) =>
+      setTimeout(() => {
+        console.warn('[auth] the saved login check took too long, starting as a guest');
+        resolve();
+      }, RESTORE_TIMEOUT),
+    );
+    const restore = session.restoreSession().catch((err) => console.warn('[auth] saved login check failed:', err));
+    Promise.race([restore, timeout]).finally(() => setReady(true));
     return unsubscribe;
   }, []);
 
