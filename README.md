@@ -1,56 +1,75 @@
-# Welcome to your Expo app 👋
+# CarZip Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+The mobile app of [CarZip](https://www.carzip.kr), the used-car marketplace for Korea: cars from verified dealers, test drives and a live chat. It talks to the same backend as the website ([CarZip](https://github.com/sanchezSanjar/CarZip), NestJS + GraphQL); the website is [CarZip-next](https://github.com/sanchezSanjar/CarZip-next).
 
-## Get started
+**Status:** first version. Login, the car list and the account screen work; car search, the car page and the chat are next.
 
-1. Install dependencies
+## Stack
+
+| Part        | Choice                                                                    |
+| ----------- | ------------------------------------------------------------------------- |
+| App         | Expo SDK 58, React Native 0.88, TypeScript, Expo Router (file-based tabs) |
+| Data        | Apollo Client 4 over the CarZip GraphQL API                               |
+| Login       | refresh tokens (backend `API.md` §2), refresh token in `expo-secure-store` |
+| Images      | `expo-image`                                                              |
+| Look        | yellow and black from the CarZip logo; Reanimated springs, a shining main button, haptics |
+
+## Getting started
+
+1. Install the packages:
 
    ```bash
    npm install
    ```
 
-2. Start the app
+2. Point the app at a backend: copy `.env.example` to `.env.local` and set `EXPO_PUBLIC_API_URL`.
+   - Backend on your PC: use the PC's address in the Wi-Fi (e.g. `http://192.168.0.10:3007`). On a phone, `localhost` is the phone itself.
+   - The live API: `https://api.carzip.kr`.
+
+   Without `.env.local` the app uses `http://localhost:3007` (fine for the web build and the emulators on the same PC).
+
+3. Start it:
 
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+   Then scan the QR code with Expo Go, or press `a` (Android emulator), `i` (iOS simulator, macOS only) or `w` (browser).
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## How login works
 
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+The app logs in with a **device** (`login(input: { ..., device })`), so the backend gives it two tokens:
 
-## Get a fresh project
+- **Access token:** a JWT valid for 15 minutes, kept in memory only. Sent as `Authorization: Bearer …`.
+- **Refresh token:** valid for 60 days, kept in the Keychain / Keystore (`expo-secure-store`). It works once: every refresh returns a new pair.
 
-When you're ready, run:
+`src/auth/session.ts` does the rest:
 
-```bash
-npm run reset-project
+- before a request, an access token that is about to expire is refreshed first;
+- only one refresh runs at a time and every request waits for it (sending a used refresh token again would end the session: reuse detection);
+- if the server still refuses a token (role changed, password changed on another device), the request is refreshed once and sent again;
+- a refused refresh logs the phone out; no network keeps the refresh token for the next try;
+- at app start the saved refresh token logs the member in again, behind the splash screen.
+
+The device id is made once and kept, so logging in again on the same phone replaces its old session on the server. In the browser build (development only) the tokens are in `localStorage`, because secure storage doesn't exist there.
+
+## Project structure
+
+```
+src/
+  app/                 screens (Expo Router)
+    _layout.tsx        Apollo, login state, stack
+    (tabs)/            Cars, Chat, Me
+    login.tsx          login (modal)
+  api/                 backend address, Apollo client, GraphQL queries
+  auth/                tokens, refresh, device id, login state (useAuth)
+  components/          logo, animated button, text field, tabs, themed text and views
+  constants/theme.ts   colours from the logo (yellow #F5A623, black #1E242B), spacing
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+## Next steps
 
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Car search and filters, the car page with photos, like and test-drive request
+- Live chat (the public room, plain WebSocket)
+- Push notifications and a live unread count
+- The four languages of the website (English, Korean, Russian, Uzbek)
