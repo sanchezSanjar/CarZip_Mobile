@@ -54,6 +54,11 @@ export function currentMember(): AuthMember | null {
   return { _id, memberNick, memberType, memberStatus };
 }
 
+/** the access token in memory right now, without refreshing (the chat sends it after every refresh) */
+export function peekAccessToken(): string | null {
+  return accessToken;
+}
+
 /** called on login, logout and every refresh; returns the unsubscribe function */
 export function onMemberChange(listener: (member: AuthMember | null) => void): () => void {
   listeners.add(listener);
