@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import { KeyboardAvoidingView, StyleSheet } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -22,6 +23,7 @@ import { Spacing } from '@/constants/theme';
 
 /** login with nickname or phone + password. The server's message is shown as it is (wrong password, blocked...) */
 export default function LoginScreen() {
+  const headerHeight = useHeaderHeight();
   const { t } = useTranslation();
   const { logIn } = useAuth();
   const [nickOrPhone, setNickOrPhone] = useState('');
@@ -61,7 +63,7 @@ export default function LoginScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.form}>
+      <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={headerHeight} style={styles.form}>
         <Animated.View entering={enterFade()} style={styles.logo}>
           <LogoMark size={76} />
         </Animated.View>

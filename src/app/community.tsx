@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -71,6 +72,7 @@ function Bubble({ message, mine }: { message: ChatMessage; mine: boolean }) {
 
 /** Community: the public CarZip chat room (messages of 7 days). Everyone reads, members write */
 export default function CommunityScreen() {
+  const headerHeight = useHeaderHeight();
   const { t } = useTranslation();
   const theme = useTheme();
   const { member } = useAuth();
@@ -111,8 +113,9 @@ export default function CommunityScreen() {
 
         <KeyboardAvoidingView
           style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
+          // the input bar stays above the keyboard on both phones (Android edge-to-edge doesn't resize the screen)
+          behavior="padding"
+          keyboardVerticalOffset={headerHeight}>
           <FlatList
             // newest at the bottom, like every chat: the list is drawn upside down
             inverted

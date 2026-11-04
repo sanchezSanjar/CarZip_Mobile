@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from '@apollo/client/react';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -106,6 +107,7 @@ function RecordingDot() {
 
 /** one private conversation: the thread, newest at the bottom, live */
 export default function ConversationScreen() {
+  const headerHeight = useHeaderHeight();
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
@@ -269,7 +271,8 @@ export default function ConversationScreen() {
           </PressableScale>
         )}
 
-        <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
+        {/* the input bar stays above the keyboard on both phones (Android edge-to-edge doesn't resize the screen any more) */}
+        <KeyboardAvoidingView style={styles.flex} behavior="padding" keyboardVerticalOffset={headerHeight}>
           <FlatList
             inverted
             data={messages}

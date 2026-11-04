@@ -2,7 +2,7 @@ import { useMutation } from '@apollo/client/react';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -64,6 +64,8 @@ export function TestDriveSheet({ carId, visible, onClose }: { carId: string; vis
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={close}>
+      {/* the message field stays above the keyboard */}
+      <KeyboardAvoidingView behavior="padding" style={styles.flex}>
       <Pressable style={styles.backdrop} onPress={close} accessibilityLabel={t('common.cancel')} />
       <SafeAreaView edges={['bottom']} style={[styles.sheet, { backgroundColor: theme.background }]}>
         <View style={[styles.handle, { backgroundColor: theme.border }]} />
@@ -130,11 +132,15 @@ export function TestDriveSheet({ carId, visible, onClose }: { carId: string; vis
           </ScrollView>
         )}
       </SafeAreaView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
