@@ -2,7 +2,19 @@
 
 The mobile app of [CarZip](https://www.carzip.kr), the used-car marketplace for Korea: cars from verified dealers, test drives and a live chat. It talks to the same backend as the website ([CarZip](https://github.com/sanchezSanjar/CarZip), NestJS + GraphQL); the website is [CarZip-next](https://github.com/sanchezSanjar/CarZip-next).
 
-**Status:** first version. Login, the car list and the account screen work; car search, the car page and the chat are next.
+**Status:** working app. Car search, the car page, test drives, the live chat room, private messages with photos and voice, push notifications, four languages and light / dark mode are all in.
+
+## Features
+
+- **Cars:** search by name, brand chips, filters (sort, price, body type, fuel, test drive possible) and a car list with skeleton loading.
+- **Car page:** swipeable photos, price, facts, options and description, the dealer with call and KakaoTalk buttons, a like heart, and **test-drive booking** (pick a day and time, add a message).
+- **Live chat room:** the public CarZip room over WebSocket, with bubbles, an online count and a live dot; guests can read, members can write (up to 500 characters). It reconnects by itself (1 s, 2 s, 4 s … 30 s) and keeps going after a token refresh.
+- **Private messages:** conversations with dealers (dealers can message each other too), a live thread, read receipts (✓ sent, ✓✓ read) and an unread badge on the Chat tab.
+  - **Photos** from the camera or the gallery (the server stores them as WebP with a thumbnail and deletes them a day after the message).
+  - **Voice messages:** tap the mic button to record (mono AAC, up to 2 minutes), then send or cancel; play them in the bubble.
+- **Push notifications:** new private messages and in-app notifications, also when the app is closed; tapping one opens the right screen. No banner for the conversation already on screen.
+- **Me:** profile with avatar, language picker, sun / moon button for light and dark mode (remembered on the phone), logout.
+- **Feel:** yellow and black from the CarZip logo, one shared fade-and-slide entrance, a shining main button, haptics; the input stays above the keyboard on Android and iOS.
 
 ## Stack
 
@@ -11,7 +23,10 @@ The mobile app of [CarZip](https://www.carzip.kr), the used-car marketplace for 
 | App         | Expo SDK 58, React Native 0.88, TypeScript, Expo Router (file-based tabs) |
 | Data        | Apollo Client 4 over the CarZip GraphQL API                               |
 | Login       | refresh tokens (backend `API.md` §2), refresh token in `expo-secure-store` |
-| Images      | `expo-image`                                                              |
+| Live        | plain WebSocket for the chat room and private-message events              |
+| Media       | `expo-image`, `expo-image-picker` (photos), `expo-audio` (voice)          |
+| Push        | `expo-notifications` with Expo push tokens                                |
+| Languages   | i18next + `expo-localization`                                             |
 | Look        | yellow and black from the CarZip logo; Reanimated springs, a shining main button, haptics |
 
 ## Getting started
@@ -35,6 +50,8 @@ The mobile app of [CarZip](https://www.carzip.kr), the used-car marketplace for 
    ```
 
    Then scan the QR code with Expo Go, or press `a` (Android emulator), `i` (iOS simulator, macOS only) or `w` (browser).
+
+4. **Push notifications (optional):** they need an Expo project id. Run `npx eas init` once, which writes it into `app.json`. Without it, and in the browser build or a simulator, the app works but skips push quietly.
 
 ## How login works
 
@@ -64,18 +81,22 @@ English, Korean, Russian and Uzbek, like the website. The app follows the phone'
 
 ```
 src/
-  app/                 screens (Expo Router)
-    _layout.tsx        Apollo, login state, stack
-    (tabs)/            Cars, Chat, Me
-    login.tsx          login (modal)
-  api/                 backend address, Apollo client, GraphQL queries
-  auth/                tokens, refresh, device id, login state (useAuth)
-  components/          logo, animated button, text field, tabs, themed text and views
-  constants/theme.ts   colours from the logo (yellow #F5A623, black #1E242B), spacing
+  app/                    screens (Expo Router)
+    _layout.tsx           Apollo, login state, push, stack
+    (tabs)/               Cars, Chat, Me
+    car/[id].tsx          the car page and test-drive booking
+    community.tsx         the live chat room
+    conversation/[id].tsx one private conversation
+    login.tsx             login (modal)
+  api/                    backend address, Apollo client, GraphQL queries, WebSocket chat, photo and voice upload
+  auth/                   tokens, refresh, device id, login state (useAuth)
+  components/             car card, filter and test-drive sheets, like button, voice bubble, buttons, fields, tabs
+  hooks/                  theme, unread messages, voice recorder
+  i18n/                   app texts (en, kr, ru, uz) and texts shared with the website
+  notifications/          push registration and opening a notification
+  constants/              colours from the logo (yellow #F5A623, black #1E242B), spacing, motion, car labels
 ```
 
 ## Next steps
 
-- Car search and filters, the car page with photos, like and test-drive request
-- Live chat (the public room, plain WebSocket)
-- Push notifications and a live unread count
+- Builds for the App Store and Google Play (EAS Build)
