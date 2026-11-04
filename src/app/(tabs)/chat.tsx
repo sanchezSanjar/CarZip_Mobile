@@ -122,7 +122,7 @@ export default function ChatListScreen() {
         <FlatList
           data={member ? conversations : []}
           keyExtractor={(conversation) => conversation._id}
-          renderItem={({ item, index }) => <ConversationRow conversation={item} meId={member!._id} index={index} />}
+          renderItem={({ item, index }) => <ConversationRow conversation={item} meId={member?._id ?? ''} index={index} />}
           contentContainerStyle={styles.list}
           refreshing={loading && !!data}
           onRefresh={member ? () => refetch() : undefined}

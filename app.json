@@ -49,6 +49,12 @@
         {
           "microphonePermission": "CarZip uses the microphone so you can send voice messages to dealers."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#F5A623"
+        }
       ]
     ],
     "experiments": {

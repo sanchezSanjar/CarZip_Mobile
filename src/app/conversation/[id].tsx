@@ -28,6 +28,7 @@ import { enterUp } from '@/constants/motion';
 import { Brand, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { clock } from '@/constants/time';
 import { useTheme } from '@/hooks/use-theme';
+import { setOpenConversation } from '@/notifications/push';
 import { MAX_VOICE_SECONDS, useVoiceRecorder } from '@/hooks/use-voice-recorder';
 
 const PAGE = 30;
@@ -137,6 +138,12 @@ export default function ConversationScreen() {
     return true;
   });
   const readAt = partnerReadAt ?? conversation?.partnerReadAt ?? null;
+
+  // while this thread is open, its new messages show here instead of as a banner
+  useEffect(() => {
+    setOpenConversation(id ?? null);
+    return () => setOpenConversation(null);
+  }, [id]);
 
   useEffect(() => {
     if (!member || !id) return;

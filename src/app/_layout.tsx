@@ -10,11 +10,13 @@ import { apolloClient } from '@/api/client';
 import { AuthProvider, useAuth } from '@/auth/auth-context';
 import { Brand, Colors } from '@/constants/theme';
 import { loadThemeChoice, useColorScheme } from '@/hooks/use-color-scheme';
+import { registerForPush } from '@/notifications/push';
+import { useNotificationTap } from '@/notifications/use-notification-tap';
 
 SplashScreen.preventAutoHideAsync();
 
 function RootStack() {
-  const { ready } = useAuth();
+  const { ready, member } = useAuth();
 
   // the light / dark choice from last time is read while the splash screen is still up
   useEffect(() => {
@@ -27,6 +29,15 @@ function RootStack() {
     SplashScreen.hideAsync();
     startChat(); // the live connection: community room, new private messages and read receipts
   }, [ready]);
+
+  // a logged-in member's phone gets push notifications (asks for permission the first time)
+  const memberId = member?._id;
+  useEffect(() => {
+    if (ready && memberId) registerForPush();
+  }, [ready, memberId]);
+
+  useNotificationTap(ready);
+
   if (!ready) return null;
 
   return (
