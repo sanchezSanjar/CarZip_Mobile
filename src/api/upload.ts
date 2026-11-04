@@ -1,3 +1,4 @@
+import { File } from 'expo-file-system';
 import type { ImagePickerAsset } from 'expo-image-picker';
 import { Platform } from 'react-native';
 
@@ -22,11 +23,8 @@ export async function uploadChatPhoto(asset: ImagePickerAsset): Promise<Uploaded
   const form = new FormData();
   form.append('target', 'chat');
   if (Platform.OS === 'web' && asset.file) form.append('file', asset.file);
-  else {
-    // React Native sends a file given as { uri, name, type }
-    const file = { uri: asset.uri, name: asset.fileName ?? 'photo.jpg', type: asset.mimeType ?? 'image/jpeg' };
-    form.append('file', file as unknown as Blob);
-  }
+  // expo/fetch (SDK 58) takes a real file, not React Native's old { uri, name, type } object
+  else form.append('file', new File(asset.uri) as unknown as Blob, asset.fileName ?? 'photo.jpg');
 
   const response = await fetch(`${API_URL}/upload/image`, {
     method: 'POST',
@@ -54,7 +52,7 @@ export async function uploadVoice(uri: string): Promise<string> {
     const blob = await (await fetch(uri)).blob();
     form.append('file', blob, 'voice.webm');
   } else {
-    form.append('file', { uri, name: 'voice.m4a', type: 'audio/mp4' } as unknown as Blob);
+    form.append('file', new File(uri) as unknown as Blob, 'voice.m4a'); // expo/fetch takes a real file
   }
 
   const response = await fetch(`${API_URL}/upload/voice`, {
