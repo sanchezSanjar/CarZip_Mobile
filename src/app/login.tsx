@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -10,6 +11,7 @@ import Animated, {
 import { enterUp, enterFade } from '@/constants/motion';
 
 import { ApiError } from '@/api/graphql';
+import { translateServerMessage } from '@/i18n';
 import { useAuth } from '@/auth/auth-context';
 import { Button } from '@/components/button';
 import { LogoMark } from '@/components/logo';
@@ -20,6 +22,7 @@ import { Spacing } from '@/constants/theme';
 
 /** login with nickname or phone + password. The server's message is shown as it is (wrong password, blocked...) */
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const { logIn } = useAuth();
   const [nickOrPhone, setNickOrPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -43,14 +46,14 @@ export default function LoginScreen() {
   };
 
   const submit = async () => {
-    if (!nickOrPhone.trim() || !password) return fail('Enter your nickname or phone and your password.');
+    if (!nickOrPhone.trim() || !password) return fail(t('login.empty'));
     setBusy(true);
     setError('');
     try {
       await logIn(nickOrPhone, password);
       router.back();
     } catch (err) {
-      fail(err instanceof ApiError ? err.message : 'Could not reach CarZip. Check your connection.');
+      fail(err instanceof ApiError ? translateServerMessage(err.message) : t('common.noConnection'));
     } finally {
       setBusy(false);
     }
@@ -63,15 +66,15 @@ export default function LoginScreen() {
           <LogoMark size={76} />
         </Animated.View>
         <Animated.View entering={enterUp(120)} style={styles.heading}>
-          <ThemedText type="subtitle">Welcome back</ThemedText>
-          <ThemedText themeColor="textSecondary">Log in with your nickname or phone number.</ThemedText>
+          <ThemedText type="subtitle">{t('login.welcome')}</ThemedText>
+          <ThemedText themeColor="textSecondary">{t('login.subtitle')}</ThemedText>
         </Animated.View>
 
         {/* the entrance and the shake both move the view: each needs its own, or one overwrites the other */}
         <Animated.View entering={enterUp(220)}>
           <Animated.View style={[styles.fields, shakeStyle]}>
             <TextField
-              placeholder="Nickname or phone"
+              placeholder={t('login.nickOrPhone')}
               autoCapitalize="none"
               autoCorrect={false}
               autoComplete="username"
@@ -80,7 +83,7 @@ export default function LoginScreen() {
               onChangeText={setNickOrPhone}
             />
             <TextField
-              placeholder="Password"
+              placeholder={t('login.password')}
               secureTextEntry
               autoComplete="current-password"
               textContentType="password"
@@ -97,7 +100,7 @@ export default function LoginScreen() {
         </Animated.View>
 
         <Animated.View entering={enterUp(320)}>
-          <Button title="Log in" busy={busy} onPress={submit} />
+          <Button title={t('common.logIn')} busy={busy} onPress={submit} />
         </Animated.View>
       </KeyboardAvoidingView>
     </ThemedView>

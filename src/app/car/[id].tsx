@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@apollo/client/react';
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Linking, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
   interpolate,
@@ -13,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { GET_CAR, START_CONVERSATION, type GetCarData } from '@/api/queries';
 import { useAuth } from '@/auth/auth-context';
+import { translateServerMessage } from '@/i18n';
 import { Button } from '@/components/button';
 import { LikeButton } from '@/components/like-button';
 import { PressableScale } from '@/components/pressable-scale';
@@ -88,6 +90,7 @@ function Fact({ label, value }: { label: string; value: string }) {
 /** one car: photos, price, facts, options, description, the dealer, like and test drive */
 export default function CarScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { t } = useTranslation();
   const theme = useTheme();
   const { member } = useAuth();
   const [bookingOpen, setBookingOpen] = useState(false);
@@ -116,7 +119,7 @@ export default function CarScreen() {
       const conversationId = result.data?.startConversation._id;
       if (conversationId) router.push({ pathname: '/conversation/[id]', params: { id: conversationId } });
     } catch (err) {
-      setChatError(err instanceof Error ? err.message : 'Could not open the conversation.');
+      setChatError(err instanceof Error ? translateServerMessage(err.message) : t('car.openFailed'));
     }
   };
   // buyers and guests write to the dealer; dealers and admins don't (messages are buyer <-> dealer)
@@ -138,9 +141,9 @@ export default function CarScreen() {
         </View>
       ) : error || !car ? (
         <SafeAreaView style={styles.center}>
-          <ThemedText themeColor="textSecondary">This car could not be loaded.</ThemedText>
-          <Button title="Try again" onPress={() => refetch()} />
-          <Button title="Back" variant="outline" onPress={() => router.back()} />
+          <ThemedText themeColor="textSecondary">{t('car.loadFailed')}</ThemedText>
+          <Button title={t('common.tryAgain')} onPress={() => refetch()} />
+          <Button title={t('common.back')} variant="outline" onPress={() => router.back()} />
         </SafeAreaView>
       ) : (
         <>
@@ -154,12 +157,12 @@ export default function CarScreen() {
                   </View>
                   {isNew(car.createdAt) && (
                     <View style={styles.newBadge}>
-                      <Text style={styles.newText}>NEW</Text>
+                      <Text style={styles.newText}>{t('cars.new')}</Text>
                     </View>
                   )}
                   {car.carStatus === 'SOLD' && (
                     <View style={styles.soldBadge}>
-                      <Text style={styles.soldText}>SOLD</Text>
+                      <Text style={styles.soldText}>{t('cars.sold')}</Text>
                     </View>
                   )}
                 </View>
@@ -170,20 +173,20 @@ export default function CarScreen() {
               </Animated.View>
 
               <Animated.View entering={enterUp(80)} style={styles.facts}>
-                <Fact label="Year" value={String(car.carYear)} />
-                <Fact label="Mileage" value={`${car.carMileage.toLocaleString('en-US')} km`} />
-                <Fact label="Fuel" value={enumLabel(car.carFuelType)} />
-                <Fact label="Gearbox" value={enumLabel(car.carTransmission)} />
-                <Fact label="Body" value={enumLabel(car.carType)} />
-                <Fact label="Color" value={enumLabel(car.carColor)} />
-                <Fact label="Condition" value={enumLabel(car.carCondition)} />
-                <Fact label="Sold for" value={car.carMarket === 'EXPORT' ? 'Export' : car.carMarket === 'BOTH' ? 'Korea + export' : 'Korea'} />
+                <Fact label={t('car.year')} value={String(car.carYear)} />
+                <Fact label={t('car.mileage')} value={`${car.carMileage.toLocaleString('en-US')} km`} />
+                <Fact label={t('car.fuel')} value={enumLabel(car.carFuelType)} />
+                <Fact label={t('car.gearbox')} value={enumLabel(car.carTransmission)} />
+                <Fact label={t('car.body')} value={enumLabel(car.carType)} />
+                <Fact label={t('car.color')} value={enumLabel(car.carColor)} />
+                <Fact label={t('car.condition')} value={enumLabel(car.carCondition)} />
+                <Fact label={t('car.soldFor')} value={enumLabel(car.carMarket)} />
               </Animated.View>
 
               {car.carOptions.length > 0 && (
                 <Animated.View entering={enterUp(140)} style={styles.block}>
                   <ThemedText type="smallBold" themeColor="textSecondary" style={styles.label}>
-                    OPTIONS
+                    {t('car.options')}
                   </ThemedText>
                   <View style={styles.options}>
                     {car.carOptions.map((option) => (
@@ -198,7 +201,7 @@ export default function CarScreen() {
               {!!car.carDesc && (
                 <Animated.View entering={enterUp(180)} style={styles.block}>
                   <ThemedText type="smallBold" themeColor="textSecondary" style={styles.label}>
-                    ABOUT THIS CAR
+                    {t('car.about')}
                   </ThemedText>
                   <ThemedText>{car.carDesc}</ThemedText>
                 </Animated.View>
@@ -216,17 +219,17 @@ export default function CarScreen() {
                     )}
                     <View style={styles.dealerText}>
                       <Text style={styles.dealerName}>{agent.agentCompany ?? agent.memberNick}</Text>
-                      <Text style={styles.dealerSub}>Verified dealer · {car.carAddress}</Text>
+                      <Text style={styles.dealerSub}>{t('car.verifiedDealer')} · {car.carAddress}</Text>
                     </View>
                   </View>
-                  {canMessage && <Button title="Message dealer" busy={opening} onPress={messageDealer} />}
+                  {canMessage && <Button title={t('car.messageDealer')} busy={opening} onPress={messageDealer} />}
                   {!!chatError && <Text style={styles.chatError}>{chatError}</Text>}
                   <View style={styles.dealerActions}>
                     {!!agent.contactPhone && (
-                      <Button title="Call" variant="onDark" style={styles.flex} onPress={() => Linking.openURL(`tel:${agent.contactPhone}`)} />
+                      <Button title={t('car.call')} variant="onDark" style={styles.flex} onPress={() => Linking.openURL(`tel:${agent.contactPhone}`)} />
                     )}
                     {!!agent.contactKakao && (
-                      <Button title={`Kakao: ${agent.contactKakao}`} variant="onDark" style={styles.flex} />
+                      <Button title={t('car.kakao', { id: agent.contactKakao })} variant="onDark" style={styles.flex} />
                     )}
                   </View>
                 </Animated.View>
@@ -238,7 +241,7 @@ export default function CarScreen() {
           <SafeAreaView edges={['top']} style={styles.topBar} pointerEvents="box-none">
             <Animated.View style={[StyleSheet.absoluteFill, styles.topBarBack, headerStyle]} />
             <View style={styles.topBarRow}>
-              <PressableScale onPress={() => router.back()} accessibilityLabel="Back" style={styles.round}>
+              <PressableScale onPress={() => router.back()} accessibilityLabel={t('common.back')} style={styles.round}>
                 <Text style={styles.roundText}>‹</Text>
               </PressableScale>
               <Animated.Text numberOfLines={1} style={[styles.topTitle, headerStyle]}>
@@ -250,7 +253,7 @@ export default function CarScreen() {
 
           {car.carStatus === 'ACTIVE' && car.carTestDrive && member?.memberType !== 'AGENT' && (
             <SafeAreaView edges={['bottom']} style={[styles.bottomBar, { backgroundColor: theme.background, borderColor: theme.border }]}>
-              <Button title="Book a test drive" onPress={bookTestDrive} />
+              <Button title={t('car.bookTestDrive')} onPress={bookTestDrive} />
             </SafeAreaView>
           )}
           <TestDriveSheet carId={car._id} visible={bookingOpen} onClose={() => setBookingOpen(false)} />

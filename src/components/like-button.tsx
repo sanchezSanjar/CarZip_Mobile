@@ -2,6 +2,7 @@ import { useMutation } from '@apollo/client/react';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { Platform, StyleSheet, Text } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 
 import { LIKE_CAR } from '@/api/queries';
@@ -12,6 +13,7 @@ import { PressableScale } from './pressable-scale';
 
 /** heart on a car: pops when liked. Guests are sent to the login screen */
 export function LikeButton({ carId, liked, size = 40 }: { carId: string; liked: boolean; size?: number }) {
+  const { t } = useTranslation();
   const { member } = useAuth();
   const [likeCar] = useMutation(LIKE_CAR);
   const pop = useSharedValue(1);
@@ -31,7 +33,7 @@ export function LikeButton({ carId, liked, size = 40 }: { carId: string; liked: 
       onPress={toggle}
       pressedScale={0.85}
       accessibilityRole="button"
-      accessibilityLabel={liked ? 'Remove like' : 'Like this car'}
+      accessibilityLabel={liked ? t('car.unlike') : t('car.like')}
       style={[styles.button, { width: size, height: size, borderRadius: size / 2 }]}>
       <Animated.View style={popStyle}>
         <Text style={[styles.heart, { fontSize: size * 0.5, color: liked ? Brand.yellow : '#FFFFFF' }]}>

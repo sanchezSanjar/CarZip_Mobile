@@ -1,6 +1,7 @@
 import { useQuery } from '@apollo/client/react';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,14 +9,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { GET_MY_PROFILE, type GetMyProfileData } from '@/api/queries';
 import { useAuth } from '@/auth/auth-context';
 import { Button } from '@/components/button';
+import { Chip } from '@/components/chip';
 import { LogoMark } from '@/components/logo';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { enterUp, enterFade } from '@/constants/motion';
 import { Brand, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-
-const ROLE_LABELS = { USER: 'Buyer', AGENT: 'Dealer', ADMIN: 'Admin' } as const;
+import { chooseLanguage, LANGUAGES } from '@/i18n';
 
 function InfoRow({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
@@ -29,8 +30,31 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
+/** English, 한국어, Русский, O'zbekcha: the choice is remembered on the phone */
+function LanguagePicker() {
+  const { t, i18n } = useTranslation();
+  return (
+    <View style={styles.languages}>
+      <ThemedText type="smallBold" themeColor="textSecondary" style={styles.label}>
+        {t('me.language')}
+      </ThemedText>
+      <View style={styles.chips}>
+        {LANGUAGES.map((language) => (
+          <Chip
+            key={language.code}
+            label={language.label}
+            selected={i18n.language === language.code}
+            onPress={() => chooseLanguage(language.code)}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
 /** my account: log in, or my profile and the two ways to log out */
 export default function MeScreen() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { member, logOut, logOutEverywhere } = useAuth();
   const [error, setError] = useState('');
@@ -48,7 +72,7 @@ export default function MeScreen() {
     try {
       await logOutEverywhere();
     } catch {
-      setError('Could not reach CarZip. You are still logged in on your other devices.');
+      setError(t('me.logOutAllFailed'));
     } finally {
       setBusy(false);
     }
@@ -64,15 +88,16 @@ export default function MeScreen() {
                 <LogoMark size={64} />
               </Animated.View>
               <Text style={styles.heroTitle}>
-                Your <Text style={styles.accent}>CarZip</Text>
+                {t('me.guestTitle')} <Text style={styles.accent}>CarZip</Text>
               </Text>
               <Text style={styles.heroText}>
-                Log in to like cars, follow dealers, book test drives and write in the chat.
+                {t('me.guestText')}
               </Text>
             </Animated.View>
             <Animated.View entering={enterUp(150)}>
-              <Button title="Log in" onPress={() => router.push('/login')} />
+              <Button title={t('common.logIn')} onPress={() => router.push('/login')} />
             </Animated.View>
+            <LanguagePicker />
           </View>
         ) : (
           <View style={styles.section}>
@@ -83,7 +108,7 @@ export default function MeScreen() {
               <Text style={styles.heroTitle}>{member.memberNick}</Text>
               <View style={styles.roleChip}>
                 <Text style={styles.roleText}>
-                  {ROLE_LABELS[member.memberType]}
+                  {t(`me.roles.${member.memberType}`)}
                   {profile?.agentCompany ? ` · ${profile.agentCompany}` : ''}
                 </Text>
               </View>
@@ -93,20 +118,21 @@ export default function MeScreen() {
               <Animated.View
                 entering={enterUp(120)}
                 style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-                <InfoRow label="Name" value={profile.memberFullName} />
-                <InfoRow label="Phone" value={profile.memberPhone} />
+                <InfoRow label={t('me.name')} value={profile.memberFullName} />
+                <InfoRow label={t('me.phone')} value={profile.memberPhone} />
               </Animated.View>
             )}
 
             <Animated.View entering={enterUp(200)} style={styles.actions}>
-              <Button title="Log out" variant="dark" onPress={() => logOut()} />
-              <Button title="Log out on every device" variant="outline" busy={busy} onPress={endEverywhere} />
+              <Button title={t('me.logOut')} variant="dark" onPress={() => logOut()} />
+              <Button title={t('me.logOutAll')} variant="outline" busy={busy} onPress={endEverywhere} />
               {!!error && (
                 <ThemedText type="small" themeColor="danger">
                   {error}
                 </ThemedText>
               )}
             </Animated.View>
+            <LanguagePicker />
           </View>
         )}
       </SafeAreaView>
@@ -193,6 +219,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: Spacing.three,
+  },
+  languages: {
+    gap: Spacing.two,
+    marginTop: Spacing.two,
+  },
+  label: {
+    letterSpacing: 1,
+  },
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
   },
   actions: {
     gap: Spacing.two + 4,

@@ -1,5 +1,6 @@
 import { useQuery } from '@apollo/client/react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Platform, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, {
   interpolate,
@@ -21,7 +22,7 @@ import { CarCardSkeleton } from '@/components/skeleton';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BRANDS, PRICE_RANGES, SORTS } from '@/constants/cars';
+import { BRANDS, enumLabel, PRICE_RANGES, SORTS } from '@/constants/cars';
 import { BottomTabInset, Brand, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -54,21 +55,23 @@ function useDebounced<T>(value: T, delay = 400): T {
 
 /** the black block on top of the list: logo and what CarZip is */
 function Hero() {
+  const { t } = useTranslation();
   return (
     <Animated.View entering={enterUp()} style={styles.hero}>
       <Animated.View entering={enterFade(150)}>
         <Logo size={34} color="#FFFFFF" />
       </Animated.View>
       <Text style={styles.heroTitle}>
-        Used cars from <Text style={styles.heroAccent}>verified dealers</Text>
+        {t('cars.heroTitle')} <Text style={styles.heroAccent}>{t('cars.heroAccent')}</Text>
       </Text>
-      <Text style={styles.heroText}>All over Korea. Book a test drive and talk to the dealer directly.</Text>
+      <Text style={styles.heroText}>{t('cars.heroText')}</Text>
     </Animated.View>
   );
 }
 
 /** Cars for sale: search, brand chips, filters, and more cars while scrolling */
 export default function CarsScreen() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const [text, setText] = useState('');
   const [brands, setBrands] = useState<string[]>([]);
@@ -125,21 +128,21 @@ export default function CarsScreen() {
               <TextInput
                 value={text}
                 onChangeText={setText}
-                placeholder="Search Sorento, GV70, Model 3…"
+                placeholder={t('cars.search')}
                 placeholderTextColor={theme.textSecondary}
                 style={[styles.searchInput, { color: theme.text }]}
                 returnKeyType="search"
                 autoCorrect={false}
               />
               {!!text && (
-                <PressableScale onPress={() => setText('')} accessibilityLabel="Clear search" style={styles.clear}>
+                <PressableScale onPress={() => setText('')} accessibilityLabel={t('cars.clearSearch')} style={styles.clear}>
                   <Text style={[styles.clearText, { color: theme.textSecondary }]}>✕</Text>
                 </PressableScale>
               )}
             </View>
             <PressableScale
               onPress={() => setSheetOpen(true)}
-              accessibilityLabel="Filters"
+              accessibilityLabel={t('cars.filters')}
               style={[styles.filterButton, filterCount > 0 && styles.filterButtonOn]}>
               <Text style={[styles.filterIcon, { color: filterCount > 0 ? Brand.ink : Brand.yellow }]}>☰</Text>
               {filterCount > 0 && (
@@ -151,9 +154,9 @@ export default function CarsScreen() {
             <ThemeToggle />
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.brandRow}>
-            <Chip label="All brands" selected={!brands.length} onPress={() => setBrands([])} />
+            <Chip label={t('cars.allBrands')} selected={!brands.length} onPress={() => setBrands([])} />
             {BRANDS.map((brand) => (
-              <Chip key={brand.value} label={brand.label} selected={brands.includes(brand.value)} onPress={() => toggleBrand(brand.value)} />
+              <Chip key={brand.value} label={enumLabel(brand.value)} selected={brands.includes(brand.value)} onPress={() => toggleBrand(brand.value)} />
             ))}
           </ScrollView>
         </Animated.View>
@@ -165,8 +168,8 @@ export default function CarsScreen() {
           </View>
         ) : error && !data ? (
           <View style={styles.center}>
-            <ThemedText themeColor="textSecondary">Could not load the cars. Check the connection.</ThemedText>
-            <Button title="Try again" onPress={() => refetch()} />
+            <ThemedText themeColor="textSecondary">{t('cars.loadFailed')}</ThemedText>
+            <Button title={t('common.tryAgain')} onPress={() => refetch()} />
           </View>
         ) : (
           <Animated.FlatList
@@ -176,8 +179,8 @@ export default function CarsScreen() {
             ListHeaderComponent={<Hero />}
             ListEmptyComponent={
               <View style={styles.empty}>
-                <ThemedText type="smallBold">No cars match this search.</ThemedText>
-                <Button title="Clear filters" variant="dark" onPress={() => { setText(''); setBrands([]); setFilters(NO_FILTERS); }} />
+                <ThemedText type="smallBold">{t('cars.noMatch')}</ThemedText>
+                <Button title={t('cars.clearFilters')} variant="dark" onPress={() => { setText(''); setBrands([]); setFilters(NO_FILTERS); }} />
               </View>
             }
             ListFooterComponent={loadingMore ? <CarCardSkeleton /> : undefined}

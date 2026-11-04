@@ -2,6 +2,7 @@ import { useQuery } from '@apollo/client/react';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FlatList, Platform, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,6 +21,7 @@ import { useTheme } from '@/hooks/use-theme';
 
 /** the public room, on top of the list */
 function CommunityCard() {
+  const { t } = useTranslation();
   const chat = useChat();
   return (
     <PressableScale onPress={() => router.push('/community')} pressedScale={0.97} style={styles.community}>
@@ -28,10 +30,12 @@ function CommunityCard() {
       </View>
       <View style={styles.flex}>
         <Text style={styles.communityTitle}>
-          CarZip <Text style={styles.accent}>community</Text>
+          CarZip <Text style={styles.accent}>{t('chat.community')}</Text>
         </Text>
         <Text style={styles.communityText}>
-          Public chat for everyone · {chat.status === 'open' ? `${chat.online} online` : 'connecting…'}
+          {t('chat.communityText', {
+            status: chat.status === 'open' ? t('chat.online', { count: chat.online }) : t('chat.connecting'),
+          })}
         </Text>
       </View>
       <Text style={styles.chevron}>›</Text>
@@ -40,9 +44,10 @@ function CommunityCard() {
 }
 
 function ConversationRow({ conversation, meId, index }: { conversation: ConversationItem; meId: string; index: number }) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const partner = conversation.partner;
-  const name = partner?.agentCompany || partner?.memberNick || 'Member';
+  const name = partner?.agentCompany || partner?.memberNick || t('chat.member');
   const unread = conversation.myUnread > 0;
   const mineLast = conversation.lastSenderId === meId;
 
@@ -63,7 +68,7 @@ function ConversationRow({ conversation, meId, index }: { conversation: Conversa
           <View style={styles.rowTop}>
             <ThemedText type="smallBold" numberOfLines={1} style={styles.flex}>
               {name}
-              {partner?.memberType === 'AGENT' ? ' · Dealer' : ''}
+              {partner?.memberType === 'AGENT' ? ` · ${t('chat.dealer')}` : ''}
             </ThemedText>
             <ThemedText type="small" themeColor={unread ? 'text' : 'textSecondary'}>
               {shortTime(conversation.lastMessageAt)}
@@ -76,7 +81,9 @@ function ConversationRow({ conversation, meId, index }: { conversation: Conversa
           )}
           <View style={styles.rowTop}>
             <ThemedText type={unread ? 'smallBold' : 'small'} themeColor={unread ? 'text' : 'textSecondary'} numberOfLines={1} style={styles.flex}>
-              {conversation.lastMessageText ? `${mineLast ? 'You: ' : ''}${conversation.lastMessageText}` : 'Say hello 👋'}
+              {conversation.lastMessageText
+                ? `${mineLast ? t('chat.you') : ''}${conversation.lastMessageText}`
+                : t('chat.sayHello')}
             </ThemedText>
             {unread && (
               <View style={styles.badge}>
@@ -92,6 +99,7 @@ function ConversationRow({ conversation, meId, index }: { conversation: Conversa
 
 /** Chat tab: the community room and my private conversations with dealers / buyers */
 export default function ChatListScreen() {
+  const { t } = useTranslation();
   const { member } = useAuth();
   const { data, loading, refetch } = useQuery<{ getConversations: { list: ConversationItem[]; total: number } }>(
     GET_CONVERSATIONS,
@@ -128,11 +136,11 @@ export default function ChatListScreen() {
           onRefresh={member ? () => refetch() : undefined}
           ListHeaderComponent={
             <View style={styles.header}>
-              <ThemedText type="subtitle">Messages</ThemedText>
+              <ThemedText type="subtitle">{t('chat.title')}</ThemedText>
               <CommunityCard />
               {member && conversations.length > 0 && (
                 <ThemedText type="smallBold" themeColor="textSecondary" style={styles.label}>
-                  CONVERSATIONS
+                  {t('chat.conversations')}
                 </ThemedText>
               )}
             </View>
@@ -142,16 +150,16 @@ export default function ChatListScreen() {
               loading ? undefined : (
                 <View style={styles.empty}>
                   <ThemedText themeColor="textSecondary" style={styles.center}>
-                    No conversations yet. Open a car and tap “Message dealer” to ask about it.
+                    {t('chat.empty')}
                   </ThemedText>
                 </View>
               )
             ) : (
               <View style={styles.empty}>
                 <ThemedText themeColor="textSecondary" style={styles.center}>
-                  Log in to message dealers about their cars.
+                  {t('chat.guest')}
                 </ThemedText>
-                <Button title="Log in" onPress={() => router.push('/login')} />
+                <Button title={t('common.logIn')} onPress={() => router.push('/login')} />
               </View>
             )
           }

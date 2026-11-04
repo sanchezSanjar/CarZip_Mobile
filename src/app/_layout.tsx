@@ -4,23 +4,27 @@ import { Stack } from 'expo-router/stack';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { startChat } from '@/api/chat';
 import { apolloClient } from '@/api/client';
 import { AuthProvider, useAuth } from '@/auth/auth-context';
 import { Brand, Colors } from '@/constants/theme';
 import { loadThemeChoice, useColorScheme } from '@/hooks/use-color-scheme';
+import { loadLanguageChoice } from '@/i18n';
 import { registerForPush } from '@/notifications/push';
 import { useNotificationTap } from '@/notifications/use-notification-tap';
 
 SplashScreen.preventAutoHideAsync();
 
 function RootStack() {
+  const { t } = useTranslation();
   const { ready, member } = useAuth();
 
   // the light / dark choice from last time is read while the splash screen is still up
   useEffect(() => {
     loadThemeChoice();
+    loadLanguageChoice();
   }, []);
 
   // the splash screen stays until the saved login is checked, so a member never sees the guest screens first
@@ -50,9 +54,9 @@ function RootStack() {
       }}>
       {/* title: what the back button of the screens above the tabs shows */}
       <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'CarZip' }} />
-      <Stack.Screen name="login" options={{ presentation: 'modal', title: 'Log in' }} />
+      <Stack.Screen name="login" options={{ presentation: 'modal', title: t('login.title') }} />
       <Stack.Screen name="car/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
-      <Stack.Screen name="community" options={{ title: 'Community', animation: 'slide_from_right' }} />
+      <Stack.Screen name="community" options={{ title: t('community.title'), animation: 'slide_from_right' }} />
       <Stack.Screen name="conversation/[id]" options={{ title: '', animation: 'slide_from_right' }} />
     </Stack>
   );

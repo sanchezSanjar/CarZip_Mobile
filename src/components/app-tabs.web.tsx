@@ -1,5 +1,6 @@
 import { Tabs, TabList, TabTrigger, TabSlot, TabTriggerSlotProps, TabListProps } from 'expo-router/ui';
 import { View, StyleSheet, Text } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Brand, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useUnreadMessages } from '@/hooks/use-unread-messages';
@@ -9,6 +10,7 @@ import { PressableScale } from './pressable-scale';
 
 /** the browser build (for development): the same three tabs as a black bar on top */
 export default function AppTabs() {
+  const { t } = useTranslation();
   const unread = useUnreadMessages();
   return (
     <Tabs>
@@ -16,13 +18,13 @@ export default function AppTabs() {
       <TabList asChild>
         <CustomTabList>
           <TabTrigger name="index" href="/" asChild>
-            <TabButton>Cars</TabButton>
+            <TabButton>{t('tabs.cars')}</TabButton>
           </TabTrigger>
           <TabTrigger name="chat" href="/chat" asChild>
-            <TabButton>{unread ? `Chat · ${unread}` : 'Chat'}</TabButton>
+            <TabButton>{unread ? t('tabs.chatCount', { count: unread }) : t('tabs.chat')}</TabButton>
           </TabTrigger>
           <TabTrigger name="me" href="/me" asChild>
-            <TabButton>Me</TabButton>
+            <TabButton>{t('tabs.me')}</TabButton>
           </TabTrigger>
         </CustomTabList>
       </TabList>

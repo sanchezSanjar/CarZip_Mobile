@@ -1,11 +1,13 @@
 import { useMutation } from '@apollo/client/react';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { REQUEST_TEST_DRIVE } from '@/api/queries';
+import { translateServerMessage } from '@/i18n';
 import { enterFade } from '@/constants/motion';
 import { Brand, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -18,7 +20,6 @@ import { ThemedText } from './themed-text';
 
 const DAYS = 14; // the next two weeks (the backend allows up to 60 days)
 const HOURS = [10, 11, 12, 13, 14, 15, 16, 17, 18];
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function nextDays(): Date[] {
   const today = new Date();
@@ -28,6 +29,8 @@ function nextDays(): Date[] {
 
 /** pick a day and an hour, add a message, send the request to the dealer */
 export function TestDriveSheet({ carId, visible, onClose }: { carId: string; visible: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
+  const weekdays = t('td.weekdays') as unknown as string[];
   const theme = useTheme();
   const [days] = useState(nextDays);
   const [day, setDay] = useState(0);
@@ -38,7 +41,7 @@ export function TestDriveSheet({ carId, visible, onClose }: { carId: string; vis
   const [requestTestDrive, { loading }] = useMutation(REQUEST_TEST_DRIVE);
 
   const send = async () => {
-    if (hour === null) return setError('Pick a time.');
+    if (hour === null) return setError(t('td.pickTime'));
     const date = new Date(days[day]);
     date.setHours(hour);
     setError('');
@@ -49,7 +52,7 @@ export function TestDriveSheet({ carId, visible, onClose }: { carId: string; vis
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not send the request.');
+      setError(err instanceof Error ? translateServerMessage(err.message) : t('td.sendFailed'));
     }
   };
 
@@ -61,7 +64,7 @@ export function TestDriveSheet({ carId, visible, onClose }: { carId: string; vis
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={close}>
-      <Pressable style={styles.backdrop} onPress={close} accessibilityLabel="Close" />
+      <Pressable style={styles.backdrop} onPress={close} accessibilityLabel={t('common.cancel')} />
       <SafeAreaView edges={['bottom']} style={[styles.sheet, { backgroundColor: theme.background }]}>
         <View style={[styles.handle, { backgroundColor: theme.border }]} />
         {sent ? (
@@ -69,15 +72,15 @@ export function TestDriveSheet({ carId, visible, onClose }: { carId: string; vis
             <Animated.View entering={enterFade()} style={styles.doneCircle}>
               <Text style={styles.doneCheck}>✓</Text>
             </Animated.View>
-            <ThemedText type="subtitle">Request sent</ThemedText>
+            <ThemedText type="subtitle">{t('td.sent')}</ThemedText>
             <ThemedText themeColor="textSecondary" style={styles.center}>
-              The dealer will confirm or suggest another time. You will get a notification.
+              {t('td.sentText')}
             </ThemedText>
-            <Button title="Great" onPress={close} style={styles.full} />
+            <Button title={t('td.great')} onPress={close} style={styles.full} />
           </View>
         ) : (
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-            <ThemedText type="subtitle">Book a test drive</ThemedText>
+            <ThemedText type="subtitle">{t('td.title')}</ThemedText>
             <ThemedText type="smallBold" themeColor="textSecondary" style={styles.label}>
               DAY
             </ThemedText>
@@ -96,7 +99,7 @@ export function TestDriveSheet({ carId, visible, onClose }: { carId: string; vis
                         : { backgroundColor: theme.backgroundElement, borderColor: theme.border },
                     ]}>
                     <Text style={[styles.weekday, { color: selected ? Brand.ink : theme.textSecondary }]}>
-                      {WEEKDAYS[date.getDay()]}
+                      {weekdays[date.getDay()]}
                     </Text>
                     <Text style={[styles.dayNumber, { color: selected ? Brand.ink : theme.text }]}>{date.getDate()}</Text>
                   </PressableScale>
@@ -112,7 +115,7 @@ export function TestDriveSheet({ carId, visible, onClose }: { carId: string; vis
               ))}
             </View>
             <TextField
-              placeholder="Message to the dealer (optional)"
+              placeholder={t('td.message')}
               value={message}
               onChangeText={setMessage}
               maxLength={300}
@@ -123,7 +126,7 @@ export function TestDriveSheet({ carId, visible, onClose }: { carId: string; vis
                 {error}
               </ThemedText>
             )}
-            <Button title="Send request" busy={loading} onPress={send} />
+            <Button title={t('td.send')} busy={loading} onPress={send} />
           </ScrollView>
         )}
       </SafeAreaView>

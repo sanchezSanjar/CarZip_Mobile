@@ -2,6 +2,7 @@ import type { ImagePickerAsset } from 'expo-image-picker';
 import { Platform } from 'react-native';
 
 import { getAccessToken } from '@/auth/session';
+import i18n from '@/i18n';
 
 import { API_URL } from './config';
 
@@ -16,7 +17,7 @@ export interface UploadedImage {
  */
 export async function uploadChatPhoto(asset: ImagePickerAsset): Promise<UploadedImage> {
   const token = await getAccessToken();
-  if (!token) throw new Error('Log in to send photos.');
+  if (!token) throw new Error(i18n.t('chat.guest'));
 
   const form = new FormData();
   form.append('target', 'chat');
@@ -33,7 +34,7 @@ export async function uploadChatPhoto(asset: ImagePickerAsset): Promise<Uploaded
     body: form,
   });
   const result = await response.json();
-  if (!response.ok) throw new Error(Array.isArray(result.message) ? result.message[0] : (result.message ?? 'Upload failed.'));
+  if (!response.ok) throw new Error(Array.isArray(result.message) ? result.message[0] : (result.message ?? i18n.t('thread.uploadFailed')));
   return result as UploadedImage;
 }
 
@@ -46,7 +47,7 @@ export const thumbnailOf = (url: string) => url.replace(/\.webp$/, '_thumb.webp'
  */
 export async function uploadVoice(uri: string): Promise<string> {
   const token = await getAccessToken();
-  if (!token) throw new Error('Log in to send voice messages.');
+  if (!token) throw new Error(i18n.t('chat.guest'));
 
   const form = new FormData();
   if (Platform.OS === 'web') {
@@ -62,6 +63,6 @@ export async function uploadVoice(uri: string): Promise<string> {
     body: form,
   });
   const result = await response.json();
-  if (!response.ok) throw new Error(Array.isArray(result.message) ? result.message[0] : (result.message ?? 'Upload failed.'));
+  if (!response.ok) throw new Error(Array.isArray(result.message) ? result.message[0] : (result.message ?? i18n.t('thread.uploadFailed')));
   return result.url as string;
 }

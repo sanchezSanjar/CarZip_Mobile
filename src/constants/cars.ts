@@ -1,4 +1,9 @@
-/** labels for the backend's car enums (backend libs/common/src/enums/car.enum.ts) */
+import i18n from '@/i18n';
+
+/**
+ * The backend's car enums (backend libs/common/src/enums/car.enum.ts). The label is the English fallback:
+ * screens show enumLabel(value), translated with the website's enum texts.
+ */
 
 export const BRANDS: { value: string; label: string }[] = [
   { value: 'HYUNDAI', label: 'Hyundai' },
@@ -43,38 +48,38 @@ export const TYPES: { value: string; label: string }[] = [
   { value: 'TRUCK', label: 'Truck' },
 ];
 
+/** label = a translation key */
 export const SORTS: { label: string; sort: string; direction: 'ASC' | 'DESC' }[] = [
-  { label: 'Newest', sort: 'CREATED_AT', direction: 'DESC' },
-  { label: 'Price: low', sort: 'PRICE', direction: 'ASC' },
-  { label: 'Price: high', sort: 'PRICE', direction: 'DESC' },
-  { label: 'Mileage', sort: 'MILEAGE', direction: 'ASC' },
-  { label: 'Year: newest', sort: 'YEAR', direction: 'DESC' },
-  { label: 'Most liked', sort: 'LIKES', direction: 'DESC' },
+  { label: 'filters.sort.newest', sort: 'CREATED_AT', direction: 'DESC' },
+  { label: 'filters.sort.priceLow', sort: 'PRICE', direction: 'ASC' },
+  { label: 'filters.sort.priceHigh', sort: 'PRICE', direction: 'DESC' },
+  { label: 'filters.sort.mileage', sort: 'MILEAGE', direction: 'ASC' },
+  { label: 'filters.sort.yearNew', sort: 'YEAR', direction: 'DESC' },
+  { label: 'filters.sort.likes', sort: 'LIKES', direction: 'DESC' },
 ];
 
-/** price ranges in KRW, for the filter sheet */
+/** price ranges in KRW, for the filter sheet (label = a translation key) */
 export const PRICE_RANGES: { label: string; start?: number; end?: number }[] = [
-  { label: 'Any price' },
-  { label: 'Under ₩10M', end: 10_000_000 },
-  { label: '₩10–20M', start: 10_000_000, end: 20_000_000 },
-  { label: '₩20–40M', start: 20_000_000, end: 40_000_000 },
-  { label: 'Over ₩40M', start: 40_000_000 },
+  { label: 'filters.prices.any' },
+  { label: 'filters.prices.under10', end: 10_000_000 },
+  { label: 'filters.prices.10to20', start: 10_000_000, end: 20_000_000 },
+  { label: 'filters.prices.20to40', start: 20_000_000, end: 40_000_000 },
+  { label: 'filters.prices.over40', start: 40_000_000 },
 ];
 
-/** 'PLUG_IN_HYBRID' -> 'Plug in hybrid', for enum values without a label above */
+/** an enum value in the current language ('PLUG_IN_HYBRID' -> 'Plug-in hybrid' / '플러그인 하이브리드' ...) */
 export function enumLabel(value?: string | null): string {
   if (!value) return '';
-  const all = [...BRANDS, ...FUELS, ...TYPES];
-  const known = all.find((item) => item.value === value);
-  if (known) return known.label;
+  const known = [...BRANDS, ...FUELS, ...TYPES].find((item) => item.value === value)?.label;
   const text = value.toLowerCase().replace(/_/g, ' ');
-  return text.charAt(0).toUpperCase() + text.slice(1);
+  const fallback = known ?? text.charAt(0).toUpperCase() + text.slice(1);
+  return i18n.t(`enum.${value}`, { defaultValue: fallback });
 }
 
 export function formatPrice(car: { carPrice?: number | null; carPriceUsd?: number | null }): string {
   if (car.carPrice) return `₩${car.carPrice.toLocaleString('en-US')}`;
   if (car.carPriceUsd) return `$${car.carPriceUsd.toLocaleString('en-US')}`;
-  return 'Price on request';
+  return i18n.t('cars.priceOnRequest');
 }
 
 /** listed in the last 3 days: shown with a NEW badge */

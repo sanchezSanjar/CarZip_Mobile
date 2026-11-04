@@ -53,6 +53,13 @@ The app logs in with a **device** (`login(input: { ..., device })`), so the back
 
 The device id is made once and kept, so logging in again on the same phone replaces its old session on the server. In the browser build (development only) the tokens are in `localStorage`, because secure storage doesn't exist there.
 
+## Languages
+
+English, Korean, Russian and Uzbek, like the website. The app follows the phone's language until the member picks one on the Me screen (remembered on the phone).
+
+- `src/i18n/app/<language>.json`: the app's own texts. All four files must have the same keys.
+- `src/i18n/shared/`: enum labels (brands, fuels, colours …) and the server's error messages, copied from the website. After the website's texts change, run `node scripts/sync-web-texts.mjs` (it reads `../CarZip-next`).
+
 ## Project structure
 
 ```
@@ -72,4 +79,3 @@ src/
 - Car search and filters, the car page with photos, like and test-drive request
 - Live chat (the public room, plain WebSocket)
 - Push notifications and a live unread count
-- The four languages of the website (English, Korean, Russian, Uzbek)

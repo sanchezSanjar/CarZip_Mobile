@@ -1,7 +1,8 @@
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { FUELS, PRICE_RANGES, SORTS, TYPES } from '@/constants/cars';
+import { enumLabel, FUELS, PRICE_RANGES, SORTS, TYPES } from '@/constants/cars';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -50,53 +51,54 @@ export function FilterSheet({
   onChange: (filters: CarFilters) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const set = (patch: Partial<CarFilters>) => onChange({ ...filters, ...patch });
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Close filters" />
+      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel={t('filters.close')} />
       <SafeAreaView edges={['bottom']} style={[styles.sheet, { backgroundColor: theme.background }]}>
         <View style={[styles.handle, { backgroundColor: theme.border }]} />
         <ScrollView contentContainerStyle={styles.content}>
-          <ThemedText type="subtitle">Filters</ThemedText>
-          <Section title="SORT BY">
+          <ThemedText type="subtitle">{t('filters.title')}</ThemedText>
+          <Section title={t('filters.sortBy')}>
             {SORTS.map((sort, index) => (
-              <Chip key={sort.label} label={sort.label} selected={filters.sort === index} onPress={() => set({ sort: index })} />
+              <Chip key={sort.label} label={t(sort.label)} selected={filters.sort === index} onPress={() => set({ sort: index })} />
             ))}
           </Section>
-          <Section title="PRICE">
+          <Section title={t('filters.price')}>
             {PRICE_RANGES.map((range, index) => (
-              <Chip key={range.label} label={range.label} selected={filters.price === index} onPress={() => set({ price: index })} />
+              <Chip key={range.label} label={t(range.label)} selected={filters.price === index} onPress={() => set({ price: index })} />
             ))}
           </Section>
-          <Section title="BODY TYPE">
+          <Section title={t('filters.bodyType')}>
             {TYPES.map((type) => (
               <Chip
                 key={type.value}
-                label={type.label}
+                label={enumLabel(type.value)}
                 selected={filters.types.includes(type.value)}
                 onPress={() => set({ types: toggle(filters.types, type.value) })}
               />
             ))}
           </Section>
-          <Section title="FUEL">
+          <Section title={t('filters.fuel')}>
             {FUELS.map((fuel) => (
               <Chip
                 key={fuel.value}
-                label={fuel.label}
+                label={enumLabel(fuel.value)}
                 selected={filters.fuels.includes(fuel.value)}
                 onPress={() => set({ fuels: toggle(filters.fuels, fuel.value) })}
               />
             ))}
           </Section>
-          <Section title="EXTRAS">
-            <Chip label="Test drive possible" selected={filters.testDrive} onPress={() => set({ testDrive: !filters.testDrive })} />
+          <Section title={t('filters.extras')}>
+            <Chip label={t('filters.testDrive')} selected={filters.testDrive} onPress={() => set({ testDrive: !filters.testDrive })} />
           </Section>
         </ScrollView>
         <View style={styles.actions}>
-          <Button title="Reset" variant="outline" style={styles.reset} onPress={() => onChange(NO_FILTERS)} />
-          <Button title="Show cars" style={styles.show} onPress={onClose} />
+          <Button title={t('filters.reset')} variant="outline" style={styles.reset} onPress={() => onChange(NO_FILTERS)} />
+          <Button title={t('filters.show')} style={styles.show} onPress={onClose} />
         </View>
       </SafeAreaView>
     </Modal>

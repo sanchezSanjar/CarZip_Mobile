@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
@@ -14,6 +15,7 @@ import { PressableScale } from './pressable-scale';
 import { ThemedText } from './themed-text';
 
 export function CarCard({ car, index }: { car: CarListItem; index: number }) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const liked = !!car.meLiked?.[0]?.myFavorite;
 
@@ -36,7 +38,7 @@ export function CarCard({ car, index }: { car: CarListItem; index: number }) {
             </View>
             {isNew(car.createdAt) && (
               <View style={styles.newBadge}>
-                <Text style={styles.newText}>NEW</Text>
+                <Text style={styles.newText}>{t('cars.new')}</Text>
               </View>
             )}
             <View style={styles.spacer} />
@@ -56,7 +58,7 @@ export function CarCard({ car, index }: { car: CarListItem; index: number }) {
           {car.agentData && (
             <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
               {car.agentData.agentCompany ?? car.agentData.memberNick}
-              {car.carTestDrive ? '  ·  Test drive' : ''}
+              {car.carTestDrive ? `  ·  ${t('cars.testDrive')}` : ''}
             </ThemedText>
           )}
         </View>

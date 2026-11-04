@@ -3,12 +3,14 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { onPrivateEvent, startChat } from '@/api/chat';
 import { ApiError } from '@/api/graphql';
+import { translateServerMessage } from '@/i18n';
 import { thumbnailOf, uploadChatPhoto, uploadVoice, type UploadedImage } from '@/api/upload';
 import {
   GET_CONVERSATIONS,
@@ -45,6 +47,7 @@ function Bubble({
   read: boolean;
   onOpenPhoto: (url: string) => void;
 }) {
+  const { t } = useTranslation();
   const theme = useTheme();
   return (
     <Animated.View entering={enterUp()} style={[styles.bubbleRow, mine && styles.bubbleRowMine]}>
@@ -69,7 +72,7 @@ function Bubble({
           </PressableScale>
         )}
         {!!message.messageImage && (
-          <PressableScale onPress={() => onOpenPhoto(message.messageImage!)} accessibilityLabel="Open photo">
+          <PressableScale onPress={() => onOpenPhoto(message.messageImage!)} accessibilityLabel={t('thread.openPhoto')}>
             <Image source={thumbnailOf(message.messageImage)} style={styles.photo} contentFit="cover" transition={200} />
           </PressableScale>
         )}
@@ -103,6 +106,7 @@ function RecordingDot() {
 
 /** one private conversation: the thread, newest at the bottom, live */
 export default function ConversationScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useTheme();
   const { member } = useAuth();
@@ -173,7 +177,7 @@ export default function ConversationScreen() {
     const permission = fromCamera
       ? await ImagePicker.requestCameraPermissionsAsync()
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) return setError(fromCamera ? 'Allow the camera in the settings.' : 'Allow photos in the settings.');
+    if (!permission.granted) return setError(fromCamera ? t('thread.allowCamera') : t('thread.allowPhotos'));
     const options: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.8 };
     const picked = fromCamera ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options);
     const asset = picked.canceled ? undefined : picked.assets[0];
@@ -184,17 +188,17 @@ export default function ConversationScreen() {
       const uploaded = await uploadChatPhoto(asset);
       setPhoto({ ...uploaded, localUri: asset.uri });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not upload the photo.');
+      setError(err instanceof Error ? translateServerMessage(err.message) : t('thread.uploadFailed'));
     } finally {
       setUploading(false);
     }
   };
   const attach = () => {
     if (Platform.OS === 'web') return pickPhoto(false); // no camera in the browser build
-    Alert.alert('Send a photo', undefined, [
-      { text: 'Take a photo', onPress: () => pickPhoto(true) },
-      { text: 'Choose from gallery', onPress: () => pickPhoto(false) },
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('thread.sendPhoto'), undefined, [
+      { text: t('thread.takePhoto'), onPress: () => pickPhoto(true) },
+      { text: t('thread.gallery'), onPress: () => pickPhoto(false) },
+      { text: t('common.cancel'), style: 'cancel' },
     ]);
   };
 
@@ -209,7 +213,7 @@ export default function ConversationScreen() {
       });
       if (result.data) setLive((list) => [result.data!.sendMessage, ...list]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not send the voice message.');
+      setError(err instanceof Error ? translateServerMessage(err.message) : t('thread.voiceFailed'));
     } finally {
       setUploading(false);
     }
@@ -217,9 +221,9 @@ export default function ConversationScreen() {
   const startVoice = async () => {
     setError('');
     try {
-      if (!(await voice.start())) setError('Allow the microphone in the settings to send voice messages.');
+      if (!(await voice.start())) setError(t('thread.allowMic'));
     } catch {
-      setError('Could not start recording.');
+      setError(t('thread.recordFailed'));
     }
   };
 
@@ -239,12 +243,12 @@ export default function ConversationScreen() {
       setText('');
       setPhoto(null);
     } catch (err) {
-      setError(err instanceof ApiError || err instanceof Error ? err.message : 'Could not send the message.');
+      setError(err instanceof ApiError || err instanceof Error ? translateServerMessage(err.message) : t('thread.sendFailed'));
     }
   };
 
   const partner = conversation?.partner;
-  const name = partner?.agentCompany || partner?.memberNick || 'Conversation';
+  const name = partner?.agentCompany || partner?.memberNick || t('thread.conversation');
 
   return (
     <ThemedView style={styles.container}>
@@ -285,7 +289,7 @@ export default function ConversationScreen() {
               loading ? undefined : (
                 <View style={styles.empty}>
                   <ThemedText themeColor="textSecondary" style={styles.center}>
-                    Say hello! Ask about the car, the price or a test drive. Messages are kept for 14 days.
+                    {t('thread.empty')}
                   </ThemedText>
                 </View>
               )
@@ -304,11 +308,11 @@ export default function ConversationScreen() {
                 <ActivityIndicator color={Brand.yellow} />
               ) : (
                 <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
-                  Photo ready. Add a caption or tap send.
+                  {t('thread.photoReady')}
                 </ThemedText>
               )}
               {photo && (
-                <PressableScale onPress={() => setPhoto(null)} accessibilityLabel="Remove photo" style={styles.previewRemove}>
+                <PressableScale onPress={() => setPhoto(null)} accessibilityLabel={t('thread.removePhoto')} style={styles.previewRemove}>
                   <Text style={styles.previewRemoveText}>✕</Text>
                 </PressableScale>
               )}
@@ -316,17 +320,17 @@ export default function ConversationScreen() {
           )}
           {voice.recording ? (
             <View style={[styles.inputBar, { backgroundColor: theme.background, borderColor: theme.border }]}>
-              <PressableScale onPress={voice.cancel} accessibilityLabel="Cancel recording" style={styles.recordCancel}>
+              <PressableScale onPress={voice.cancel} accessibilityLabel={t('thread.cancelRecording')} style={styles.recordCancel}>
                 <Text style={styles.recordCancelText}>✕</Text>
               </PressableScale>
               <View style={[styles.recordBar, { backgroundColor: theme.backgroundElement, borderColor: Brand.yellow }]}>
                 <RecordingDot />
                 <ThemedText type="smallBold">{formatSeconds(voice.seconds)}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
-                  Recording… up to {formatSeconds(MAX_VOICE_SECONDS)}
+                  {t('thread.recording', { max: formatSeconds(MAX_VOICE_SECONDS) })}
                 </ThemedText>
               </View>
-              <PressableScale onPress={voice.finish} accessibilityLabel="Send voice message" style={styles.send}>
+              <PressableScale onPress={voice.finish} accessibilityLabel={t('thread.sendVoice')} style={styles.send}>
                 <Text style={styles.sendIcon}>➤</Text>
               </PressableScale>
             </View>
@@ -335,14 +339,14 @@ export default function ConversationScreen() {
             <PressableScale
               onPress={attach}
               disabled={uploading}
-              accessibilityLabel="Send a photo"
+              accessibilityLabel={t('thread.sendPhoto')}
               style={[styles.attach, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
               <Text style={[styles.attachIcon, { color: theme.text }]}>📷</Text>
             </PressableScale>
             <TextInput
               value={text}
               onChangeText={setText}
-              placeholder={photo ? 'Add a caption…' : 'Write a message…'}
+              placeholder={photo ? t('thread.caption') : t('thread.placeholder')}
               placeholderTextColor={theme.textSecondary}
               maxLength={MAX_LENGTH}
               multiline
@@ -352,7 +356,7 @@ export default function ConversationScreen() {
               <PressableScale
                 onPress={startVoice}
                 disabled={uploading}
-                accessibilityLabel="Record a voice message"
+                accessibilityLabel={t('thread.record')}
                 style={[styles.send, uploading && styles.sendOff]}>
                 {uploading ? <ActivityIndicator color={Brand.ink} /> : <Text style={styles.sendIcon}>🎤</Text>}
               </PressableScale>
@@ -360,7 +364,7 @@ export default function ConversationScreen() {
               <PressableScale
                 onPress={send}
                 disabled={!canSend}
-                accessibilityLabel="Send"
+                accessibilityLabel={t('thread.send')}
                 style={[styles.send, !canSend && styles.sendOff]}>
                 <Text style={styles.sendIcon}>➤</Text>
               </PressableScale>
@@ -372,7 +376,7 @@ export default function ConversationScreen() {
 
       {/* a photo full screen, tap anywhere to close */}
       <Modal visible={!!viewing} transparent animationType="fade" onRequestClose={() => setViewing(null)}>
-        <Pressable style={styles.viewer} onPress={() => setViewing(null)} accessibilityLabel="Close photo">
+        <Pressable style={styles.viewer} onPress={() => setViewing(null)} accessibilityLabel={t('thread.closePhoto')}>
           {viewing && <Image source={viewing} style={styles.viewerImage} contentFit="contain" transition={200} />}
           <Text style={styles.viewerClose}>✕</Text>
         </Pressable>

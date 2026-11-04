@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -40,8 +41,9 @@ const timeOf = (iso: string) => {
 };
 
 function Bubble({ message, mine }: { message: ChatMessage; mine: boolean }) {
+  const { t } = useTranslation();
   const theme = useTheme();
-  const nick = message.memberData?.memberNick ?? 'Guest';
+  const nick = message.memberData?.memberNick ?? t('community.guest');
   const dealer = message.memberData?.memberType === 'AGENT';
   return (
     <Animated.View entering={enterUp()} style={[styles.bubbleRow, mine && styles.bubbleRowMine]}>
@@ -55,7 +57,7 @@ function Bubble({ message, mine }: { message: ChatMessage; mine: boolean }) {
         {!mine && (
           <Text style={[styles.nick, { color: dealer ? Brand.yellow : theme.textSecondary }]}>
             {nick}
-            {dealer ? ' · Dealer' : ''}
+            {dealer ? ` · ${t('chat.dealer')}` : ''}
           </Text>
         )}
         <Text style={[styles.text, { color: mine ? Brand.ink : theme.text }]}>{message.text}</Text>
@@ -69,6 +71,7 @@ function Bubble({ message, mine }: { message: ChatMessage; mine: boolean }) {
 
 /** Community: the public CarZip chat room (messages of 7 days). Everyone reads, members write */
 export default function CommunityScreen() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { member } = useAuth();
   const chat = useChat();
@@ -87,10 +90,10 @@ export default function CommunityScreen() {
   const live = chat.status === 'open';
   const statusText =
     chat.status === 'open'
-      ? `${chat.online} online`
+      ? t('chat.online', { count: chat.online })
       : chat.status === 'blocked'
-        ? 'Your account is blocked'
-        : 'Connecting…';
+        ? t('community.blocked')
+        : t('chat.connecting');
 
   return (
     <ThemedView style={styles.container}>
@@ -98,11 +101,11 @@ export default function CommunityScreen() {
         <Animated.View entering={enterUp()} style={styles.header}>
           <View style={styles.liveRow}>
             <LiveDot live={live} />
-            <Text style={styles.liveText}>{live ? 'LIVE' : 'OFFLINE'}</Text>
+            <Text style={styles.liveText}>{live ? t('community.live') : t('community.offline')}</Text>
             <Text style={styles.online}>{statusText}</Text>
           </View>
           <Text style={styles.title}>
-            CarZip <Text style={styles.accent}>community</Text>
+            CarZip <Text style={styles.accent}>{t('chat.community')}</Text>
           </Text>
         </Animated.View>
 
@@ -119,7 +122,7 @@ export default function CommunityScreen() {
             contentContainerStyle={styles.list}
             ListEmptyComponent={
               <View style={styles.empty}>
-                <ThemedText themeColor="textSecondary">No messages in the last 7 days. Say hello!</ThemedText>
+                <ThemedText themeColor="textSecondary">{t('community.empty')}</ThemedText>
               </View>
             }
           />
@@ -136,7 +139,7 @@ export default function CommunityScreen() {
                 <TextInput
                   value={text}
                   onChangeText={setText}
-                  placeholder={live ? 'Write a message…' : 'Connecting…'}
+                  placeholder={live ? t('community.placeholder') : t('chat.connecting')}
                   placeholderTextColor={theme.textSecondary}
                   maxLength={MESSAGE_MAX_LENGTH}
                   multiline
@@ -146,13 +149,13 @@ export default function CommunityScreen() {
                 <PressableScale
                   onPress={send}
                   disabled={!live || !text.trim()}
-                  accessibilityLabel="Send"
+                  accessibilityLabel={t('thread.send')}
                   style={[styles.send, (!live || !text.trim()) && styles.sendOff]}>
                   <Text style={styles.sendIcon}>➤</Text>
                 </PressableScale>
               </>
             ) : (
-              <Button title="Log in to write" style={styles.flex} onPress={() => router.push('/login')} />
+              <Button title={t('community.logInToWrite')} style={styles.flex} onPress={() => router.push('/login')} />
             )}
           </View>
         </KeyboardAvoidingView>

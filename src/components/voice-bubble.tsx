@@ -1,5 +1,6 @@
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Brand, Radius, Spacing } from '@/constants/theme';
@@ -15,6 +16,7 @@ export const formatSeconds = (seconds: number) =>
  * The recording is loaded only when play is pressed, so a long thread doesn't download every voice message.
  */
 export function VoiceBubble({ url, duration, mine }: { url: string; duration: number; mine: boolean }) {
+  const { t } = useTranslation();
   const player = useAudioPlayer(null);
   const status = useAudioPlayerStatus(player);
   const [loaded, setLoaded] = useState(false);
@@ -43,7 +45,7 @@ export function VoiceBubble({ url, duration, mine }: { url: string; duration: nu
         onPress={toggle}
         pressedScale={0.88}
         accessibilityRole="button"
-        accessibilityLabel={status.playing ? 'Pause voice message' : 'Play voice message'}
+        accessibilityLabel={status.playing ? t('thread.pause') : t('thread.play')}
         style={[styles.play, { backgroundColor: mine ? Brand.ink : Brand.yellow }]}>
         <Text style={[styles.playIcon, { color: mine ? Brand.yellow : Brand.ink }]}>{status.playing ? '❚❚' : '▶'}</Text>
       </PressableScale>
