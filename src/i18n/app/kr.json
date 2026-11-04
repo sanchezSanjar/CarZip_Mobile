@@ -1,5 +1,10 @@
 {
-  "tabs": { "cars": "차량", "chat": "채팅", "me": "내 정보", "chatCount": "채팅 · {{count}}" },
+  "tabs": {
+    "cars": "차량",
+    "chat": "채팅",
+    "me": "내 정보",
+    "chatCount": "채팅 · {{count}}"
+  },
   "common": {
     "tryAgain": "다시 시도",
     "back": "뒤로",
@@ -70,7 +75,9 @@
     "bookTestDrive": "시승 예약",
     "openFailed": "대화를 열 수 없습니다.",
     "like": "좋아요",
-    "unlike": "좋아요 취소"
+    "unlike": "좋아요 취소",
+    "kakaoCopied": "카카오톡 ID {{id}}를 복사했습니다",
+    "kakaoMissing": "카카오톡 검색에 붙여넣으세요. 카카오톡이 열리지 않으면 먼저 설치해 주세요."
   },
   "td": {
     "title": "시승 예약",
@@ -83,7 +90,15 @@
     "sent": "요청을 보냈습니다",
     "sentText": "딜러가 확정하거나 다른 시간을 제안합니다. 알림으로 알려드려요.",
     "great": "확인",
-    "weekdays": ["일", "월", "화", "수", "목", "금", "토"]
+    "weekdays": [
+      "일",
+      "월",
+      "화",
+      "수",
+      "목",
+      "금",
+      "토"
+    ]
   },
   "login": {
     "title": "로그인",
@@ -96,12 +111,14 @@
   "me": {
     "guestTitle": "나의",
     "guestText": "로그인하면 차량 좋아요, 딜러 팔로우, 시승 예약, 채팅을 할 수 있습니다.",
-    "roles": { "USER": "구매자", "AGENT": "딜러", "ADMIN": "관리자" },
+    "roles": {
+      "USER": "구매자",
+      "AGENT": "딜러",
+      "ADMIN": "관리자"
+    },
     "name": "이름",
     "phone": "전화번호",
     "logOut": "로그아웃",
-    "logOutAll": "모든 기기에서 로그아웃",
-    "logOutAllFailed": "CarZip에 연결할 수 없습니다. 다른 기기에서는 아직 로그인되어 있습니다.",
     "language": "언어",
     "lightMode": "라이트 모드로 전환",
     "darkMode": "다크 모드로 전환"

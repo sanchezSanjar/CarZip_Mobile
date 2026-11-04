@@ -117,8 +117,9 @@ export default function CommunityScreen() {
           behavior="padding"
           keyboardVerticalOffset={headerHeight}>
           <FlatList
-            // newest at the bottom, like every chat: the list is drawn upside down
-            inverted
+            // newest at the bottom, like every chat: the list is drawn upside down. Not while empty: the
+            // "no messages" text would be upside down too
+            inverted={chat.messages.length > 0}
             data={[...chat.messages].reverse()}
             keyExtractor={(message, index) => `${message.createdAt}-${index}`}
             renderItem={({ item }) => <Bubble message={item} mine={!!member && item.memberData?._id === member._id} />}
@@ -236,8 +237,6 @@ const styles = StyleSheet.create({
   empty: {
     alignItems: 'center',
     paddingVertical: Spacing.five,
-    // the list is upside down
-    transform: [{ scaleY: -1 }],
   },
   bubbleRow: {
     flexDirection: 'row',

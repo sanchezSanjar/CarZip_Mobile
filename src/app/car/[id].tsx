@@ -3,7 +3,8 @@ import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Linking, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
+import { Alert, Linking, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
   interpolate,
   useAnimatedScrollHandler,
@@ -122,9 +123,22 @@ export default function CarScreen() {
       setChatError(err instanceof Error ? translateServerMessage(err.message) : t('car.openFailed'));
     }
   };
-  // buyers and guests write to the dealer; dealers and admins don't (messages are buyer <-> dealer)
-  const canMessage = !member || member.memberType === 'USER';
   const agent = car?.agentData;
+  // buyers, other dealers and guests (asked to log in) write to the dealer; not admins, not on your own car
+  const canMessage = !member || (member.memberType !== 'ADMIN' && member._id !== agent?._id);
+
+  // KakaoTalk: an open-chat link opens that chat; a plain ID is copied, then the app opens (search it there).
+  // KakaoTalk has no public link that opens a profile by its ID
+  const openKakao = async (contact: string) => {
+    if (/^https?:\/\//.test(contact)) return Linking.openURL(contact);
+    await Clipboard.setStringAsync(contact);
+    try {
+      await Linking.openURL('kakaotalk://launch');
+      Alert.alert(t('car.kakaoCopied', { id: contact }));
+    } catch {
+      Alert.alert(t('car.kakaoCopied', { id: contact }), t('car.kakaoMissing'));
+    }
+  };
   const liked = !!car?.meLiked?.[0]?.myFavorite;
 
   return (
@@ -229,7 +243,12 @@ export default function CarScreen() {
                       <Button title={t('car.call')} variant="onDark" style={styles.flex} onPress={() => Linking.openURL(`tel:${agent.contactPhone}`)} />
                     )}
                     {!!agent.contactKakao && (
-                      <Button title={t('car.kakao', { id: agent.contactKakao })} variant="onDark" style={styles.flex} />
+                      <Button
+                        title={t('car.kakao', { id: agent.contactKakao })}
+                        variant="kakao"
+                        style={styles.flex}
+                        onPress={() => openKakao(agent.contactKakao!)}
+                      />
                     )}
                   </View>
                 </Animated.View>

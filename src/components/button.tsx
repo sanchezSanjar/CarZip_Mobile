@@ -20,7 +20,7 @@ import { PressableScale, type PressableScaleProps } from './pressable-scale';
 export type ButtonProps = Omit<PressableScaleProps, 'children'> & {
   title: string;
   /** primary: yellow, the main action. dark: black with yellow text. outline: a thin frame. onDark: a frame on black blocks */
-  variant?: 'primary' | 'dark' | 'outline' | 'onDark';
+  variant?: 'primary' | 'dark' | 'outline' | 'onDark' | 'kakao';
   busy?: boolean;
 };
 
@@ -55,6 +55,7 @@ export function Button({ title, variant = 'primary', busy, disabled, onPress, st
     dark: { background: Brand.ink, text: Brand.yellow, border: Brand.ink },
     outline: { background: 'transparent', text: theme.text, border: theme.border },
     onDark: { background: 'transparent', text: '#FFFFFF', border: '#3A414B' },
+    kakao: { background: '#FEE500', text: '#191919', border: '#FEE500' }, // KakaoTalk's own colours
   }[variant];
 
   return (

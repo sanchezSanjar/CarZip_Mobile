@@ -1,6 +1,6 @@
 import { useQuery } from '@apollo/client/react';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -56,27 +56,13 @@ function LanguagePicker() {
 export default function MeScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { member, logOut, logOutEverywhere } = useAuth();
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
+  const { member, logOut } = useAuth();
   // loaded with my access token: the private fields (phone, full name) prove the token reached the server
   const { data } = useQuery<GetMyProfileData>(GET_MY_PROFILE, {
     variables: { targetId: member?._id ?? '' },
     skip: !member,
   });
   const profile = data?.getMember;
-
-  const endEverywhere = async () => {
-    setBusy(true);
-    setError('');
-    try {
-      await logOutEverywhere();
-    } catch {
-      setError(t('me.logOutAllFailed'));
-    } finally {
-      setBusy(false);
-    }
-  };
 
   return (
     <ThemedView style={styles.container}>
@@ -102,8 +88,13 @@ export default function MeScreen() {
         ) : (
           <View style={styles.section}>
             <Animated.View entering={enterUp()} style={styles.hero}>
+              {/* the profile photo, or the first letter of the nick on yellow while there is none */}
               <Animated.View entering={enterFade(100)} style={styles.avatar}>
-                <Text style={styles.avatarLetter}>{member.memberNick.charAt(0).toUpperCase()}</Text>
+                {profile?.memberImage ? (
+                  <Image source={profile.memberImage} style={styles.avatarImage} contentFit="cover" transition={200} />
+                ) : (
+                  <Text style={styles.avatarLetter}>{member.memberNick.charAt(0).toUpperCase()}</Text>
+                )}
               </Animated.View>
               <Text style={styles.heroTitle}>{member.memberNick}</Text>
               <View style={styles.roleChip}>
@@ -125,12 +116,6 @@ export default function MeScreen() {
 
             <Animated.View entering={enterUp(200)} style={styles.actions}>
               <Button title={t('me.logOut')} variant="dark" onPress={() => logOut()} />
-              <Button title={t('me.logOutAll')} variant="outline" busy={busy} onPress={endEverywhere} />
-              {!!error && (
-                <ThemedText type="small" themeColor="danger">
-                  {error}
-                </ThemedText>
-              )}
             </Animated.View>
             <LanguagePicker />
           </View>
@@ -189,6 +174,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 16,
     elevation: 8,
+  },
+  avatarImage: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    borderWidth: 3,
+    borderColor: Brand.yellow,
   },
   avatarLetter: {
     color: Brand.ink,

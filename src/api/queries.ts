@@ -155,6 +155,7 @@ export const GET_MY_PROFILE = gql`
     getMember(targetId: $targetId, countView: false) {
       _id
       memberNick
+      memberImage
       memberType
       memberPhone
       memberFullName
@@ -167,6 +168,7 @@ export interface GetMyProfileData {
   getMember: {
     _id: string;
     memberNick: string;
+    memberImage?: string | null;
     memberType: string;
     memberPhone?: string | null;
     memberFullName?: string | null;

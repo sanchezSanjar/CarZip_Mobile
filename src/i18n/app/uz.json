@@ -1,5 +1,10 @@
 {
-  "tabs": { "cars": "Mashinalar", "chat": "Chat", "me": "Profil", "chatCount": "Chat · {{count}}" },
+  "tabs": {
+    "cars": "Mashinalar",
+    "chat": "Chat",
+    "me": "Profil",
+    "chatCount": "Chat · {{count}}"
+  },
   "common": {
     "tryAgain": "Qayta urinish",
     "back": "Orqaga",
@@ -70,7 +75,9 @@
     "bookTestDrive": "Test-drayvga yozilish",
     "openFailed": "Suhbatni ochib bo'lmadi.",
     "like": "Yoqtirish",
-    "unlike": "Yoqtirishni bekor qilish"
+    "unlike": "Yoqtirishni bekor qilish",
+    "kakaoCopied": "KakaoTalk ID {{id}} nusxalandi",
+    "kakaoMissing": "Uni KakaoTalk qidiruviga qo‘ying. KakaoTalk ochilmasa, avval uni o‘rnating."
   },
   "td": {
     "title": "Test-drayvga yozilish",
@@ -83,7 +90,15 @@
     "sent": "So'rov yuborildi",
     "sentText": "Diler tasdiqlaydi yoki boshqa vaqt taklif qiladi. Sizga bildirishnoma keladi.",
     "great": "Zo'r",
-    "weekdays": ["Yak", "Dush", "Sesh", "Chor", "Pay", "Jum", "Shan"]
+    "weekdays": [
+      "Yak",
+      "Dush",
+      "Sesh",
+      "Chor",
+      "Pay",
+      "Jum",
+      "Shan"
+    ]
   },
   "login": {
     "title": "Kirish",
@@ -96,12 +111,14 @@
   "me": {
     "guestTitle": "Sizning",
     "guestText": "Kiring: mashinalarni yoqtiring, dilerlarga obuna bo'ling, test-drayvga yoziling va chatda yozing.",
-    "roles": { "USER": "Xaridor", "AGENT": "Diler", "ADMIN": "Administrator" },
+    "roles": {
+      "USER": "Xaridor",
+      "AGENT": "Diler",
+      "ADMIN": "Administrator"
+    },
     "name": "Ism",
     "phone": "Telefon",
     "logOut": "Chiqish",
-    "logOutAll": "Barcha qurilmalardan chiqish",
-    "logOutAllFailed": "CarZip bilan aloqa yo'q. Boshqa qurilmalarda hali ham kirgansiz.",
     "language": "TIL",
     "lightMode": "Yorug' rejim",
     "darkMode": "Qorong'i rejim"

@@ -274,7 +274,8 @@ export default function ConversationScreen() {
         {/* the input bar stays above the keyboard on both phones (Android edge-to-edge doesn't resize the screen any more) */}
         <KeyboardAvoidingView style={styles.flex} behavior="padding" keyboardVerticalOffset={headerHeight}>
           <FlatList
-            inverted
+            // newest at the bottom: drawn upside down, except while empty (the empty text would be upside down)
+            inverted={messages.length > 0}
             data={messages}
             keyExtractor={(message) => message._id}
             renderItem={({ item }) => (
@@ -434,7 +435,6 @@ const styles = StyleSheet.create({
   empty: {
     paddingVertical: Spacing.five,
     paddingHorizontal: Spacing.four,
-    transform: [{ scaleY: -1 }], // the list is upside down
   },
   center: {
     textAlign: 'center',

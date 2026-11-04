@@ -1,5 +1,10 @@
 {
-  "tabs": { "cars": "Cars", "chat": "Chat", "me": "Me", "chatCount": "Chat · {{count}}" },
+  "tabs": {
+    "cars": "Cars",
+    "chat": "Chat",
+    "me": "Me",
+    "chatCount": "Chat · {{count}}"
+  },
   "common": {
     "tryAgain": "Try again",
     "back": "Back",
@@ -70,7 +75,9 @@
     "bookTestDrive": "Book a test drive",
     "openFailed": "Could not open the conversation.",
     "like": "Like this car",
-    "unlike": "Remove like"
+    "unlike": "Remove like",
+    "kakaoCopied": "KakaoTalk ID {{id}} copied",
+    "kakaoMissing": "Paste it in KakaoTalk search. If KakaoTalk did not open, install it first."
   },
   "td": {
     "title": "Book a test drive",
@@ -83,7 +90,15 @@
     "sent": "Request sent",
     "sentText": "The dealer will confirm or suggest another time. You will get a notification.",
     "great": "Great",
-    "weekdays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    "weekdays": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ]
   },
   "login": {
     "title": "Log in",
@@ -96,12 +111,14 @@
   "me": {
     "guestTitle": "Your",
     "guestText": "Log in to like cars, follow dealers, book test drives and write in the chat.",
-    "roles": { "USER": "Buyer", "AGENT": "Dealer", "ADMIN": "Admin" },
+    "roles": {
+      "USER": "Buyer",
+      "AGENT": "Dealer",
+      "ADMIN": "Admin"
+    },
     "name": "Name",
     "phone": "Phone",
     "logOut": "Log out",
-    "logOutAll": "Log out on every device",
-    "logOutAllFailed": "Could not reach CarZip. You are still logged in on your other devices.",
     "language": "LANGUAGE",
     "lightMode": "Switch to light mode",
     "darkMode": "Switch to dark mode"
