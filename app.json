@@ -43,6 +43,12 @@
           "cameraPermission": "CarZip uses the camera so you can take a picture and send it to a dealer.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "CarZip uses the microphone so you can send voice messages to dealers."
+        }
       ]
     ],
     "experiments": {

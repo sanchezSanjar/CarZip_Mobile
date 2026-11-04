@@ -4,12 +4,12 @@ import * as ImagePicker from 'expo-image-picker';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { onPrivateEvent, startChat } from '@/api/chat';
 import { ApiError } from '@/api/graphql';
-import { thumbnailOf, uploadChatPhoto, type UploadedImage } from '@/api/upload';
+import { thumbnailOf, uploadChatPhoto, uploadVoice, type UploadedImage } from '@/api/upload';
 import {
   GET_CONVERSATIONS,
   GET_MESSAGES,
@@ -20,6 +20,7 @@ import {
 } from '@/api/queries';
 import { useAuth } from '@/auth/auth-context';
 import { PressableScale } from '@/components/pressable-scale';
+import { formatSeconds, VoiceBubble } from '@/components/voice-bubble';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { formatPrice } from '@/constants/cars';
@@ -27,6 +28,7 @@ import { enterUp } from '@/constants/motion';
 import { Brand, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { clock } from '@/constants/time';
 import { useTheme } from '@/hooks/use-theme';
+import { MAX_VOICE_SECONDS, useVoiceRecorder } from '@/hooks/use-voice-recorder';
 
 const PAGE = 30;
 const MAX_LENGTH = 1000;
@@ -70,6 +72,9 @@ function Bubble({
             <Image source={thumbnailOf(message.messageImage)} style={styles.photo} contentFit="cover" transition={200} />
           </PressableScale>
         )}
+        {!!message.messageAudio && (
+          <VoiceBubble url={message.messageAudio} duration={message.messageDuration ?? 0} mine={mine} />
+        )}
         {!!message.messageText && (
           <Text style={[styles.text, { color: mine ? Brand.ink : theme.text }]}>{message.messageText}</Text>
         )}
@@ -83,6 +88,16 @@ function Bubble({
       </View>
     </Animated.View>
   );
+}
+
+/** the red dot while recording: it fades in and out */
+function RecordingDot() {
+  const pulse = useSharedValue(1);
+  useEffect(() => {
+    pulse.set(withRepeat(withTiming(0.25, { duration: 600 }), -1, true));
+  }, [pulse]);
+  const style = useAnimatedStyle(() => ({ opacity: pulse.get() }));
+  return <Animated.View style={[styles.recordDot, style]} />;
 }
 
 /** one private conversation: the thread, newest at the bottom, live */
@@ -176,7 +191,33 @@ export default function ConversationScreen() {
     ]);
   };
 
+  // a voice message: recorded, uploaded, sent at once (WhatsApp-like: the mic shows while the input is empty)
+  const voice = useVoiceRecorder(async (uri, seconds) => {
+    setError('');
+    setUploading(true);
+    try {
+      const audio = await uploadVoice(uri);
+      const result = await sendMessage({
+        variables: { input: { conversationId: id, messageAudio: audio, messageDuration: seconds } },
+      });
+      if (result.data) setLive((list) => [result.data!.sendMessage, ...list]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not send the voice message.');
+    } finally {
+      setUploading(false);
+    }
+  });
+  const startVoice = async () => {
+    setError('');
+    try {
+      if (!(await voice.start())) setError('Allow the microphone in the settings to send voice messages.');
+    } catch {
+      setError('Could not start recording.');
+    }
+  };
+
   const canSend = (!!text.trim() || !!photo) && !sending && !uploading;
+  const showMic = !text.trim() && !photo;
   const send = async () => {
     const trimmed = text.trim();
     if (!canSend) return;
@@ -266,6 +307,23 @@ export default function ConversationScreen() {
               )}
             </View>
           )}
+          {voice.recording ? (
+            <View style={[styles.inputBar, { backgroundColor: theme.background, borderColor: theme.border }]}>
+              <PressableScale onPress={voice.cancel} accessibilityLabel="Cancel recording" style={styles.recordCancel}>
+                <Text style={styles.recordCancelText}>✕</Text>
+              </PressableScale>
+              <View style={[styles.recordBar, { backgroundColor: theme.backgroundElement, borderColor: Brand.yellow }]}>
+                <RecordingDot />
+                <ThemedText type="smallBold">{formatSeconds(voice.seconds)}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
+                  Recording… up to {formatSeconds(MAX_VOICE_SECONDS)}
+                </ThemedText>
+              </View>
+              <PressableScale onPress={voice.finish} accessibilityLabel="Send voice message" style={styles.send}>
+                <Text style={styles.sendIcon}>➤</Text>
+              </PressableScale>
+            </View>
+          ) : (
           <View style={[styles.inputBar, { backgroundColor: theme.background, borderColor: theme.border }]}>
             <PressableScale
               onPress={attach}
@@ -283,14 +341,25 @@ export default function ConversationScreen() {
               multiline
               style={[styles.input, { color: theme.text, backgroundColor: theme.backgroundElement, borderColor: theme.border }]}
             />
-            <PressableScale
-              onPress={send}
-              disabled={!canSend}
-              accessibilityLabel="Send"
-              style={[styles.send, !canSend && styles.sendOff]}>
-              <Text style={styles.sendIcon}>➤</Text>
-            </PressableScale>
+            {showMic ? (
+              <PressableScale
+                onPress={startVoice}
+                disabled={uploading}
+                accessibilityLabel="Record a voice message"
+                style={[styles.send, uploading && styles.sendOff]}>
+                {uploading ? <ActivityIndicator color={Brand.ink} /> : <Text style={styles.sendIcon}>🎤</Text>}
+              </PressableScale>
+            ) : (
+              <PressableScale
+                onPress={send}
+                disabled={!canSend}
+                accessibilityLabel="Send"
+                style={[styles.send, !canSend && styles.sendOff]}>
+                <Text style={styles.sendIcon}>➤</Text>
+              </PressableScale>
+            )}
           </View>
+          )}
         </KeyboardAvoidingView>
       </SafeAreaView>
 
@@ -431,6 +500,35 @@ const styles = StyleSheet.create({
     color: Brand.yellow,
     fontSize: 14,
     fontWeight: 900,
+  },
+  recordCancel: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: Brand.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recordCancelText: {
+    color: Brand.yellow,
+    fontSize: 16,
+    fontWeight: 900,
+  },
+  recordBar: {
+    flex: 1,
+    minHeight: 46,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderWidth: 1.5,
+    borderRadius: Radius.large,
+  },
+  recordDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#E5484D',
   },
   attach: {
     width: 46,
