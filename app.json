@@ -35,7 +35,15 @@
           "imageWidth": 110
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "CarZip uses your photos so you can send pictures to dealers in messages.",
+          "cameraPermission": "CarZip uses the camera so you can take a picture and send it to a dealer.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

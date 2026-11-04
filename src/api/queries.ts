@@ -232,6 +232,7 @@ const MESSAGE_FIELDS = gql`
     senderId
     messageType
     messageText
+    messageImage
     carId
     carData {
       _id
@@ -303,6 +304,7 @@ export interface PrivateMessageItem {
   senderId: string;
   messageType: string;
   messageText?: string | null;
+  messageImage?: string | null;
   carId?: string | null;
   carData?: ChatCar | null;
   createdAt: string;

@@ -1,13 +1,15 @@
 import { useMutation, useQuery } from '@apollo/client/react';
 import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { onPrivateEvent, startChat } from '@/api/chat';
 import { ApiError } from '@/api/graphql';
+import { thumbnailOf, uploadChatPhoto, type UploadedImage } from '@/api/upload';
 import {
   GET_CONVERSATIONS,
   GET_MESSAGES,
@@ -29,7 +31,17 @@ import { useTheme } from '@/hooks/use-theme';
 const PAGE = 30;
 const MAX_LENGTH = 1000;
 
-function Bubble({ message, mine, read }: { message: PrivateMessageItem; mine: boolean; read: boolean }) {
+function Bubble({
+  message,
+  mine,
+  read,
+  onOpenPhoto,
+}: {
+  message: PrivateMessageItem;
+  mine: boolean;
+  read: boolean;
+  onOpenPhoto: (url: string) => void;
+}) {
   const theme = useTheme();
   return (
     <Animated.View entering={enterUp()} style={[styles.bubbleRow, mine && styles.bubbleRowMine]}>
@@ -51,6 +63,11 @@ function Bubble({ message, mine, read }: { message: PrivateMessageItem; mine: bo
               </Text>
               <Text style={styles.carPrice}>{formatPrice(message.carData)}</Text>
             </View>
+          </PressableScale>
+        )}
+        {!!message.messageImage && (
+          <PressableScale onPress={() => onOpenPhoto(message.messageImage!)} accessibilityLabel="Open photo">
+            <Image source={thumbnailOf(message.messageImage)} style={styles.photo} contentFit="cover" transition={200} />
           </PressableScale>
         )}
         {!!message.messageText && (
@@ -79,6 +96,9 @@ export default function ConversationScreen() {
   const [live, setLive] = useState<PrivateMessageItem[]>([]);
   const [partnerReadAt, setPartnerReadAt] = useState<string | null>(null);
   const [noMore, setNoMore] = useState(false);
+  const [photo, setPhoto] = useState<(UploadedImage & { localUri: string }) | null>(null); // uploaded, waiting to be sent
+  const [uploading, setUploading] = useState(false);
+  const [viewing, setViewing] = useState<string | null>(null); // the photo open full screen
 
   // the conversation itself (partner, car) comes from the list, which is usually in the cache already
   const { data: listData } = useQuery<{ getConversations: { list: ConversationItem[] } }>(GET_CONVERSATIONS, {
@@ -126,14 +146,50 @@ export default function ConversationScreen() {
     setOlder((list) => [...list, ...page]);
   };
 
+  // the photo is uploaded right away; it goes out with the next Send, with the text as its caption
+  const pickPhoto = async (fromCamera: boolean) => {
+    const permission = fromCamera
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) return setError(fromCamera ? 'Allow the camera in the settings.' : 'Allow photos in the settings.');
+    const options: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.8 };
+    const picked = fromCamera ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options);
+    const asset = picked.canceled ? undefined : picked.assets[0];
+    if (!asset) return;
+    setError('');
+    setUploading(true);
+    try {
+      const uploaded = await uploadChatPhoto(asset);
+      setPhoto({ ...uploaded, localUri: asset.uri });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not upload the photo.');
+    } finally {
+      setUploading(false);
+    }
+  };
+  const attach = () => {
+    if (Platform.OS === 'web') return pickPhoto(false); // no camera in the browser build
+    Alert.alert('Send a photo', undefined, [
+      { text: 'Take a photo', onPress: () => pickPhoto(true) },
+      { text: 'Choose from gallery', onPress: () => pickPhoto(false) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  const canSend = (!!text.trim() || !!photo) && !sending && !uploading;
   const send = async () => {
     const trimmed = text.trim();
-    if (!trimmed || sending) return;
+    if (!canSend) return;
     setError('');
     try {
-      const result = await sendMessage({ variables: { input: { conversationId: id, messageText: trimmed } } });
+      const result = await sendMessage({
+        variables: {
+          input: { conversationId: id, ...(trimmed && { messageText: trimmed }), ...(photo && { messageImage: photo.url }) },
+        },
+      });
       if (result.data) setLive((list) => [result.data!.sendMessage, ...list]);
       setText('');
+      setPhoto(null);
     } catch (err) {
       setError(err instanceof ApiError || err instanceof Error ? err.message : 'Could not send the message.');
     }
@@ -171,6 +227,7 @@ export default function ConversationScreen() {
                 message={item}
                 mine={item.senderId === member?._id}
                 read={!!readAt && Date.parse(item.createdAt) <= Date.parse(readAt)}
+                onOpenPhoto={setViewing}
               />
             )}
             onEndReached={loadOlder}
@@ -192,11 +249,35 @@ export default function ConversationScreen() {
               {error}
             </ThemedText>
           )}
+          {(photo || uploading) && (
+            <View style={[styles.preview, { borderColor: theme.border }]}>
+              {photo ? <Image source={photo.localUri} style={styles.previewImage} /> : <View style={styles.previewImage} />}
+              {uploading ? (
+                <ActivityIndicator color={Brand.yellow} />
+              ) : (
+                <ThemedText type="small" themeColor="textSecondary" style={styles.flex}>
+                  Photo ready. Add a caption or tap send.
+                </ThemedText>
+              )}
+              {photo && (
+                <PressableScale onPress={() => setPhoto(null)} accessibilityLabel="Remove photo" style={styles.previewRemove}>
+                  <Text style={styles.previewRemoveText}>✕</Text>
+                </PressableScale>
+              )}
+            </View>
+          )}
           <View style={[styles.inputBar, { backgroundColor: theme.background, borderColor: theme.border }]}>
+            <PressableScale
+              onPress={attach}
+              disabled={uploading}
+              accessibilityLabel="Send a photo"
+              style={[styles.attach, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+              <Text style={[styles.attachIcon, { color: theme.text }]}>📷</Text>
+            </PressableScale>
             <TextInput
               value={text}
               onChangeText={setText}
-              placeholder="Write a message…"
+              placeholder={photo ? 'Add a caption…' : 'Write a message…'}
               placeholderTextColor={theme.textSecondary}
               maxLength={MAX_LENGTH}
               multiline
@@ -204,14 +285,22 @@ export default function ConversationScreen() {
             />
             <PressableScale
               onPress={send}
-              disabled={!text.trim() || sending}
+              disabled={!canSend}
               accessibilityLabel="Send"
-              style={[styles.send, (!text.trim() || sending) && styles.sendOff]}>
+              style={[styles.send, !canSend && styles.sendOff]}>
               <Text style={styles.sendIcon}>➤</Text>
             </PressableScale>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
+
+      {/* a photo full screen, tap anywhere to close */}
+      <Modal visible={!!viewing} transparent animationType="fade" onRequestClose={() => setViewing(null)}>
+        <Pressable style={styles.viewer} onPress={() => setViewing(null)} accessibilityLabel="Close photo">
+          {viewing && <Image source={viewing} style={styles.viewerImage} contentFit="contain" transition={200} />}
+          <Text style={styles.viewerClose}>✕</Text>
+        </Pressable>
+      </Modal>
     </ThemedView>
   );
 }
@@ -307,6 +396,70 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 15,
     lineHeight: 21,
+  },
+  photo: {
+    width: 220,
+    height: 165,
+    borderRadius: Radius.small,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+  },
+  preview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    marginHorizontal: Spacing.three,
+    marginBottom: Spacing.two,
+    padding: Spacing.two,
+    borderWidth: 1.5,
+    borderRadius: Radius.medium,
+  },
+  previewImage: {
+    width: 56,
+    height: 56,
+    borderRadius: Radius.small,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+  },
+  previewRemove: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Brand.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  previewRemoveText: {
+    color: Brand.yellow,
+    fontSize: 14,
+    fontWeight: 900,
+  },
+  attach: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  attachIcon: {
+    fontSize: 20,
+  },
+  viewer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewerImage: {
+    width: '100%',
+    height: '80%',
+  },
+  viewerClose: {
+    position: 'absolute',
+    top: 56,
+    right: 24,
+    color: Brand.yellow,
+    fontSize: 26,
+    fontWeight: 900,
   },
   meta: {
     flexDirection: 'row',
